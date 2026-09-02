@@ -1,0 +1,1929 @@
+@import url("https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Archivo:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   Ridgeford Capital Bank — dark trading-floor theme
+   ========================================================================== */
+
+:root {
+  --font-display: "Bodoni Moda", Didot, Georgia, serif;
+  --font-sans: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Space Mono", ui-monospace, Menlo, monospace;
+
+  --bg:        #080808;
+  --night-900: #0c0c0c;
+  --night-800: #141414;
+  --panel:     #141414;
+  --panel-2:   #1c1c1c;
+  --panel-3:   #232323;
+
+  --ink-900: #eeeeee;
+  --ink-800: #d4d4d4;
+  --ink-700: #b0b0b0;
+  --ink-500: #9a9a9a;
+  --ink-400: #666666;
+  --ink-300: #4a4a4a;
+  --ink-200: #2a2a2a;
+  --ink-100: #1c1c1c;
+  --ink-50:  #080808;
+
+  --gold-300: #a0b0c0;   /* legacy token names, sienna values — see PALETTE */
+  --gold-400: #a0b0c0;
+  --gold-500: #8a9bab;
+  --gold-700: #5f6d7a;
+
+  --brand-500: #8a9bab;
+  --brand-600: #eeeeee;
+  --navy-900:  #0c0c0c;
+
+  --up:   #3d9b6e;
+  --down: #c45c5c;
+
+  /* Chameleon nav — rewritten from JS via IntersectionObserver */
+  --nav-fg:   #f4f7fb;
+  --nav-bg:   rgba(8,11,17,0);
+  --nav-ring: transparent;
+
+  color-scheme: dark;
+}
+
+html, body {
+  font-family: var(--font-sans), "Archivo", "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--ink-900);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "ss01", "cv11", "tnum";
+}
+
+* { -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior: smooth; }
+
+::selection { background: rgba(138,155,171,0.28); color: #fff; }
+
+/* Slim dark scrollbars — desks stare at these all day */
+* { scrollbar-width: thin; scrollbar-color: #2a3441 transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: #232c38; border-radius: 999px; border: 3px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: #33404f; background-clip: content-box; }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Faint dealing-room grid */
+.grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(255,255,255,0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.035) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+
+/* Brushed-gold text used on headlines */
+.text-gradient {
+  background: linear-gradient(92deg, #ece3d6 0%, #a0b0c0 45%, #8a9bab 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.text-gold-gradient {
+  background: linear-gradient(100deg, #5f6d7a 0%, #8a9bab 32%, #c8d2da 50%, #8a9bab 68%, #5f6d7a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid var(--gold-400);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
+/* ------------------------------- buttons -------------------------------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 8px; padding: 12px 20px; border-radius: 999px;
+  font-weight: 600; font-size: 15px; line-height: 1;
+  transition: transform .12s ease, background .12s ease, color .12s ease,
+              box-shadow .12s ease, border-color .12s ease, opacity .12s ease;
+  border: 1px solid transparent; white-space: nowrap;
+}
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Primary = polished gold on black. The house button. */
+.btn-primary {
+  background: #8a9bab;
+  color: #080808;
+  box-shadow: 0 10px 28px -12px rgba(138,155,171,0.65);
+}
+.btn-primary:hover { background: #a0b0c0; }
+
+.btn-ghost {
+  background: transparent; color: var(--ink-900);
+  border-color: var(--ink-200);
+}
+.btn-ghost:hover { background: var(--panel-2); border-color: #2e3947; }
+
+.btn-brand {
+  background: var(--steel); color: #080808;
+  box-shadow: none;
+}
+.btn-brand:hover { background: var(--steel-lt); }
+
+.btn-danger { background: rgba(234,57,67,0.14); color: #ff8b91; border-color: rgba(234,57,67,0.35); }
+.btn-danger:hover { background: rgba(234,57,67,0.22); }
+
+/* -------------------------------- cards --------------------------------- */
+.card {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.022) 0%, rgba(255,255,255,0) 40%),
+    var(--panel);
+  border: 1px solid var(--ink-200);
+  border-radius: 20px;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.03) inset, 0 10px 30px -18px rgba(0,0,0,0.9);
+}
+.card-flat { background: var(--panel); border: 1px solid var(--ink-200); border-radius: 16px; }
+
+/* Gold hairline used to mark the "premium" surfaces */
+.card-gold {
+  position: relative;
+  border-color: rgba(138,155,171,0.28);
+  box-shadow: 0 0 0 1px rgba(138,155,171,0.06), 0 18px 46px -26px rgba(138,155,171,0.35);
+}
+
+.glass {
+  background: rgba(17,22,31,0.72);
+  backdrop-filter: saturate(150%) blur(14px);
+  -webkit-backdrop-filter: saturate(150%) blur(14px);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+.glass-dark {
+  background: rgba(4,6,10,0.62);
+  backdrop-filter: saturate(160%) blur(16px);
+  -webkit-backdrop-filter: saturate(160%) blur(16px);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: var(--ink-900);
+}
+
+/* -------------------------------- inputs -------------------------------- */
+.field {
+  width: 100%;
+  background: var(--night-800);
+  border: 1px solid var(--ink-200);
+  border-radius: 12px;
+  color: var(--ink-900);
+  padding: 0 14px;
+  height: 46px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color .12s ease, box-shadow .12s ease, background .12s ease;
+}
+.field::placeholder { color: var(--ink-400); }
+.field:hover { border-color: #2e3947; }
+.field:focus {
+  border-color: var(--gold-500);
+  box-shadow: 0 0 0 3px rgba(138,155,171,0.16);
+  background: #0c1119;
+}
+textarea.field { height: auto; padding: 12px 14px; line-height: 1.5; resize: vertical; }
+select.field { appearance: none; padding-right: 36px; }
+.field[aria-invalid="true"] { border-color: rgba(234,57,67,0.6); box-shadow: 0 0 0 3px rgba(234,57,67,0.14); }
+
+/* Autofill in Chrome would otherwise paint a white slab */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink-900);
+  -webkit-box-shadow: 0 0 0 1000px #0c1119 inset;
+  caret-color: var(--ink-900);
+  transition: background-color 9999s ease-out 0s;
+}
+
+.label {
+  display: block; font-size: 12.5px; font-weight: 600;
+  letter-spacing: .01em; color: var(--ink-500); margin-bottom: 6px;
+}
+.hint { font-size: 11.5px; color: var(--ink-400); margin-top: 6px; line-height: 1.45; }
+
+/* -------------------------------- market -------------------------------- */
+.tnum { font-variant-numeric: tabular-nums; }
+.up   { color: var(--up); }
+.down { color: var(--down); }
+.pill-up   { background: rgba(22,199,132,0.12); color: var(--up);   }
+.pill-down { background: rgba(234,57,67,0.12);  color: var(--down); }
+
+.ticker-rule {
+  background-image: linear-gradient(90deg, transparent, rgba(138,155,171,0.35), transparent);
+  height: 1px;
+}
+
+/* Marquee */
+@keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+.marquee { animation: marquee 40s linear infinite; }
+.marquee:hover { animation-play-state: paused; }
+
+@keyframes marqueeSlow { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+.marquee-slow { animation: marqueeSlow 70s linear infinite; }
+
+/* Skeleton shimmer for loading market rows */
+.skeleton {
+  position: relative; overflow: hidden;
+  background: var(--panel-2); border-radius: 8px;
+}
+.skeleton::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+  animation: shimmer 1.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .animate-shimmer, .animate-floaty, .marquee, .marquee-slow, .skeleton::after { animation: none !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HERO — pinned scroll sequence
+   /public/seq (241 frames) · /public/seq-m (237 frames)
+   The stage, canvas and grain come from ScrollSequence; everything below is
+   the overlay that sits on top of it. `--heat` is written to the stage element
+   by the rAF loop and every consequence is expressed here, in CSS.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+.seq__canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* Focus pull at each hand-off */
+.seq__stage .seq__canvas {
+  filter: blur(calc(var(--heat, 0) * 6px)) saturate(calc(1 - var(--heat, 0) * 0.3));
+  transform: scale(calc(1 + var(--heat, 0) * 0.016));
+  transition: filter 60ms linear;
+}
+
+.seq__grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.4;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+/* Vignette + floor so white type always holds against a bright frame */
+.seq__stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(4,6,10,0.72) 0%, rgba(4,6,10,0.18) 34%, rgba(4,6,10,0.5) 72%, rgba(4,6,10,0.94) 100%),
+    radial-gradient(120% 80% at 20% 40%, transparent 40%, rgba(4,6,10,0.6) 100%);
+}
+
+.hero {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  color: #f2f5f9;
+}
+
+.seq__boot, .seq__fault {
+  position: absolute;
+  inset: auto 0 26px 0;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(242,245,251,0.5);
+}
+.seq__bootN { color: #8a9bab; }
+
+/* ------------------------------------------------------------- masthead -- */
+
+.hero__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 20px clamp(18px, 3.4vw, 44px);
+}
+.hero__nav nav { display: none; gap: 26px; }
+@media (min-width: 1080px) { .hero__nav nav { display: flex; } }
+.hero__nav nav a {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(242,245,251,0.62);
+  text-decoration: none;
+  transition: color 140ms ease;
+}
+.hero__nav nav a:hover { color: #a0b0c0; }
+.hero__auth { display: flex; gap: 10px; align-items: center; }
+
+.hbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 17px;
+  border-radius: 999px;
+  border: 1px solid rgba(242,245,251,0.22);
+  background: rgba(8,11,17,0.42);
+  backdrop-filter: blur(8px);
+  color: #f2f5f9;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 140ms ease, border-color 140ms ease, transform 120ms ease;
+}
+.hbtn:hover { border-color: rgba(160,176,192,0.55); background: rgba(8,11,17,0.7); }
+.hbtn:active { transform: translateY(1px); }
+.hbtn--solid {
+  background: linear-gradient(180deg, #a0b0c0, #8a9bab 55%, #5f6d7a);
+  border-color: transparent;
+  color: #0b0e13;
+  font-weight: 700;
+  box-shadow: 0 10px 30px -14px rgba(138,155,171,0.8);
+}
+.hbtn--solid:hover { filter: brightness(1.06); background: linear-gradient(180deg, #b4c2ce, #8a9bab 55%, #5f6d7a); }
+
+/* --------------------------------------------------------------- plates -- */
+
+.hero__deck {
+  position: relative;
+  flex: 1;
+  display: grid;
+  align-items: center;
+  padding: 0 clamp(18px, 3.4vw, 44px);
+}
+.plate {
+  grid-area: 1 / 1;
+  max-width: min(760px, 92%);
+  will-change: transform, opacity;
+}
+/* Each plate takes a different position on the page — the composition changes,
+   not just the words. Mirrors the crop anchors in lib/hero-motion.ts. */
+.plate--01 { justify-self: start; }
+.plate--02 { justify-self: start; margin-left: clamp(0px, 6vw, 120px); }
+.plate--03 { justify-self: start; }
+@media (min-width: 1200px) {
+  .plate--02 { justify-self: end; text-align: right; margin-left: 0; }
+  .plate--02 .plate__eyebrow, .plate--02 .plate__actions { justify-content: flex-end; }
+  .plate--02 .plate__readout { justify-content: flex-end; }
+  .plate--02 .plate__lede { margin-left: auto; }
+}
+
+.plate__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 18px;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #a0b0c0;
+}
+.plate__no { color: rgba(242,245,251,0.45); }
+.plate__rule {
+  flex: 1;
+  max-width: 120px;
+  height: 1px;
+  background: linear-gradient(90deg, #8a9bab, transparent);
+  transform-origin: left center;
+}
+
+.plate__h {
+  margin: 0;
+  font-size: clamp(34px, 5.2vw, 72px);
+  line-height: 0.96;
+  letter-spacing: -0.038em;
+  font-weight: 200;
+}
+.plate__line { display: block; }
+.plate__em {
+  font-family: var(--font-display, Georgia, serif);
+  font-style: italic;
+  font-weight: 400;
+  color: #a0b0c0;
+  letter-spacing: -0.02em;
+}
+
+.plate__lede {
+  margin: 20px 0 0;
+  font-size: clamp(14.5px, 1.1vw, 16.5px);
+  line-height: 1.55;
+  max-width: 46ch;
+  color: rgba(236,231,220,0.82);
+}
+.only-wide { display: none; }
+.only-narrow { display: inline; }
+@media (min-width: 900px) {
+  .only-wide { display: inline; }
+  .only-narrow { display: none; }
+}
+
+.plate__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+
+.plate__readout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 26px;
+  margin: 28px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid rgba(242,245,251,0.14);
+}
+.plate__readout dt {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(242,245,251,0.45);
+}
+.plate__readout dd { margin: 5px 0 0; font-size: 12px; color: rgba(242,245,251,0.9); }
+
+/* ---------------------------------------------------- aperture + transport */
+
+.ap { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.ap__blade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: calc(var(--heat, 0) * 26%);
+  background: #04060a;
+}
+.ap__blade--t { top: 0; }
+.ap__blade--b { bottom: 0; }
+.ap__cut {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #a0b0c0, transparent);
+  transform: scaleX(var(--heat, 0));
+  opacity: calc(var(--heat, 0) * 0.9);
+}
+
+.tp {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 0 clamp(18px, 3.4vw, 44px) 22px;
+}
+.tp__segs { display: flex; gap: 18px; list-style: none; margin: 0; padding: 0; }
+.tp__seg { display: flex; flex-direction: column; gap: 7px; min-width: 68px; }
+.tp__seg i {
+  display: block;
+  height: 2px;
+  background: #8a9bab;
+  transform-origin: left center;
+  transform: scaleX(0);
+  box-shadow: 0 0 12px rgba(138,155,171,0.5);
+}
+.tp__seg::before {
+  content: "";
+  display: block;
+  height: 2px;
+  margin-bottom: -9px;
+  background: rgba(242,245,251,0.16);
+}
+.tp__seg span {
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(242,245,251,0.4);
+}
+.tp__seg.is-on span { color: #a0b0c0; }
+.tp__frame { margin: 0; font-size: 9.5px; letter-spacing: 0.16em; color: rgba(242,245,251,0.35); }
+@media (max-width: 720px) { .tp__frame { display: none; } }
+
+.hero__cue {
+  position: absolute;
+  left: 50%;
+  bottom: 74px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 9.5px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(242,245,251,0.45);
+}
+.hero__cue i {
+  width: 1px;
+  height: 30px;
+  background: linear-gradient(180deg, #a0b0c0, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seq__stage .seq__canvas { filter: none; transform: none; }
+  .ap__blade { height: 0; }
+}
+/* ══════════════════════════════════════════════════════════════════════════
+   RIDGEFORD — LANDING ZONES
+   Dark, Frankfurt, editorial. Import once, after your Tailwind layers:
+       @import "../styles/ridgeford-landing.css";
+   or in app/layout.tsx:  import "@/styles/ridgeford-landing.css";
+
+   PALETTE NOTE
+   The pairing is a cold near-black ground, a WARM off-white for type, and a
+   single metal accent. The warm text on cold ground is what makes it read as
+   newsprint rather than as a SaaS dashboard — pure #fff on #000 is the most
+   common mistake in dark-mode finance design. Two signal colours only: a
+   green and a red for direction, and an oxide red reserved exclusively for
+   risk language, so a warning never looks like a link.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PALETTE — institutional neutral
+   Deep neutral blacks (never pure #000), soft white type (never pure #fff),
+   and one cool-steel accent. Green and red appear on DATA ONLY — never on a
+   button, never as decoration — so a colour in this interface always means
+   something.
+   ═════════════════════════════════════════════════════════════════════════ */
+:root {
+  --font-display: "Bodoni Moda", Didot, Georgia, serif;
+  --font-sans: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Space Mono", ui-monospace, Menlo, monospace;
+
+  --ink:      #080808;   /* page background */
+  --ink-2:    #0c0c0c;   /* sidebar / chrome */
+  --panel:    #141414;   /* cards / panels */
+  --panel-2:  #1c1c1c;   /* elevated / hover */
+  --panel-3:  #232323;
+  --line:     #2a2a2a;   /* border — quiet structure only */
+  --line-2:   #383838;
+
+  --paper:    #eeeeee;   /* primary text */
+  --paper-2:  #9a9a9a;   /* secondary text */
+  --dim:      #9a9a9a;
+  --faint:    #666666;   /* muted — hints, timestamps */
+
+  --steel:    #8a9bab;   /* accent — cool steel */
+  --steel-lt: #a0b0c0;   /* accent hover */
+  --steel-dk: #5f6d7a;
+
+  --up:       #3d9b6e;   /* muted green — data only */
+  --down:     #c45c5c;   /* muted red — data only */
+  --warn:     #b87a4a;   /* dusty amber */
+  --oxide:    #c45c5c;
+
+  --serif: var(--font-display);
+  --mono:  var(--font-mono);
+}
+
+.zn {
+  position: relative;
+  padding: clamp(72px, 9vw, 148px) 0;
+  background: var(--ink);
+  color: var(--paper);
+  overflow: clip;
+}
+.zn:nth-of-type(even) { background: var(--ink-2); }
+.zn__in { max-width: 1400px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
+
+/* Focus pull at hand-offs, driven by --heat exactly like the hero stage. */
+/* The heat hand-off used to blur this entire section, which on a large screen
+   just made the news look out of focus. The pull is now a contrast/brightness
+   lift instead — the content pops forward at the hand-off rather than smearing. */
+.zn--tape .zn__in {
+  filter: contrast(calc(1 + var(--heat, 0) * 0.10)) brightness(calc(1 + var(--heat, 0) * 0.06));
+  transform: scale(calc(1 + var(--heat, 0) * 0.004));
+}
+
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--steel);
+  margin: 0 0 14px;
+}
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.dim { color: var(--dim); }
+
+.zn__head { max-width: 880px; margin-bottom: clamp(40px, 5vw, 72px); }
+.zn__head--split {
+  max-width: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+  gap: clamp(28px, 4vw, 64px);
+  align-items: end;
+}
+.zn__h {
+  font-size: clamp(30px, 4.6vw, 62px);
+  line-height: 0.97;
+  letter-spacing: -0.04em;
+  font-weight: 250;
+  margin: 0;
+  text-wrap: balance;
+}
+.zn__h em {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--steel-lt);
+  letter-spacing: -0.02em;
+}
+.zn__lede {
+  margin: 18px 0 0;
+  font-size: clamp(14.5px, 1.05vw, 16.5px);
+  line-height: 1.62;
+  color: var(--paper-2);
+  max-width: 58ch;
+}
+.zn__head--split .zn__lede { margin-top: 0; }
+
+.note {
+  margin: 26px 0 0;
+  font-size: 11px;
+  line-height: 1.7;
+  letter-spacing: 0.02em;
+  color: var(--faint);
+  max-width: 78ch;
+  text-transform: uppercase;
+}
+
+/* ────────────────────────────────────────────────────── 01 · THE RAIL ── */
+
+.rail { margin-top: clamp(32px, 4vw, 56px); }
+
+.rail__gauge {
+  position: relative;
+  height: 3px;
+  background: var(--line);
+  margin-bottom: 40px;
+}
+.rail__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--clock, 0) * 100%);
+  background: linear-gradient(90deg, var(--steel-dk), var(--steel-lt));
+  box-shadow: 0 0 22px rgba(138, 155, 171, 0.5);
+}
+.rail__read {
+  position: absolute;
+  top: -30px;
+  left: calc(var(--clock, 0) * 100%);
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: var(--steel-lt);
+  white-space: nowrap;
+}
+
+.rail__stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+.rail__stage {
+  background: var(--ink);
+  padding: 22px 20px 26px;
+  transition: background 240ms ease;
+}
+.rail__stage.is-on { background: var(--panel); }
+.rail__t { font-size: 10.5px; color: var(--faint); letter-spacing: 0.14em; }
+.rail__stage.is-on .rail__t { color: var(--steel); }
+.rail__dot {
+  display: block;
+  width: 7px;
+  height: 7px;
+  margin: 14px 0;
+  background: var(--line-2);
+  border-radius: 50%;
+}
+.rail__stage.is-on .rail__dot {
+  background: var(--steel);
+  box-shadow: 0 0 0 4px rgba(138, 155, 171, 0.15);
+}
+.rail__k { margin: 0 0 8px; font-size: 15px; font-weight: 600; letter-spacing: -0.02em; }
+.rail__v { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--dim); }
+
+.facts {
+  list-style: none;
+  margin: clamp(40px, 5vw, 72px) 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+.fact { background: var(--ink); padding: 26px 24px 28px; min-width: 0; }
+.fact__k { margin: 0; font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--steel); }
+.fact__v { margin: 12px 0 10px; font-size: clamp(18px, 1.7vw, 24px); letter-spacing: -0.03em; font-weight: 500; }
+.fact__note { margin: 0; font-size: 12px; line-height: 1.55; color: var(--dim); }
+
+/* ────────────────────────────────────────────────────── 02 · THE TAPE ── */
+
+.zn--tape { padding-top: 0; }
+
+.tape__rule {
+  overflow: hidden;
+  border-block: 1px solid var(--line);
+  background: #04060a;
+  padding: 11px 0;
+  margin-bottom: clamp(56px, 7vw, 104px);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+.tape__run { display: flex; width: max-content; }
+.tape__runIn { display: flex; }
+.tape__tick {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 22px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--dim);
+  white-space: nowrap;
+}
+.tape__tick b { color: var(--steel); font-weight: 700; letter-spacing: 0.16em; }
+.tape__tick em { color: var(--paper); font-style: normal; font-weight: 600; }
+.tape__tick i { color: var(--line-2); font-style: normal; padding-left: 12px; }
+
+@keyframes marqueeSlow { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.marquee-slow { animation: marqueeSlow 78s linear infinite; }
+.tape__rule:hover .marquee-slow { animation-play-state: paused; }
+
+/* The scatter: 12 tracks, cards claim irregular spans. */
+.scat {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-rows: minmax(88px, auto);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+.sc {
+  background: var(--ink);
+  padding: clamp(20px, 2vw, 30px);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  will-change: transform;
+}
+.sc--lead  { grid-column: span 7; grid-row: span 2; background: #0a0e14; }
+.sc--wide  { grid-column: span 5; }
+.sc--tall  { grid-column: span 4; grid-row: span 2; }
+.sc--unit  { grid-column: span 4; }
+.sc--lead + .sc--tall { grid-column: span 5; }
+
+.sc__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sc__tag {
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  padding: 4px 8px;
+  border: 1px solid var(--line-2);
+  color: var(--dim);
+}
+.sc__tag--policy { color: var(--steel); border-color: var(--steel-dk); }
+.sc__tag--rails { color: var(--up); border-color: rgba(23, 192, 140, 0.35); }
+.sc__tag--prices { color: var(--paper); }
+.sc__tag--currency { color: #6ea8ff; border-color: rgba(110, 168, 255, 0.35); }
+.sc__tag--supervision { color: var(--oxide); border-color: rgba(180, 70, 47, 0.4); }
+.sc__date { font-size: 10.5px; color: var(--faint); }
+
+.sc__fig {
+  margin: 4px 0 0;
+  font-size: clamp(38px, 5vw, 68px);
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+  font-weight: 300;
+  color: var(--steel-lt);
+}
+.sc--lead .sc__fig { font-size: clamp(52px, 7vw, 96px); }
+.sc__figNote {
+  display: block;
+  margin-top: 10px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.sc__h {
+  margin: 0;
+  font-size: clamp(16px, 1.5vw, 21px);
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  font-weight: 600;
+  text-wrap: balance;
+}
+.sc--lead .sc__h { font-size: clamp(21px, 2.2vw, 31px); }
+.sc__b { margin: 0; font-size: 13px; line-height: 1.6; color: var(--paper-2); }
+.sc__src {
+  margin-top: auto;
+  padding-top: 8px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+  text-decoration: none;
+  border-top: 1px solid var(--line);
+}
+.sc__src:hover { color: var(--steel-lt); }
+
+/* ────────────────────────────────────────────────── 03 · CONSTELLATION ── */
+
+.const {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 10px;
+}
+.const__c {
+  display: block;
+  padding: 16px 16px 18px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  will-change: transform;
+  transition: border-color 200ms ease, background 200ms ease;
+}
+.const__c:hover { border-color: var(--line-2); background: var(--panel-2); }
+.const__c b { display: block; font-size: 15px; letter-spacing: 0.08em; color: var(--paper); }
+.const__n { display: block; margin-top: 6px; font-size: 12.5px; color: var(--dim); }
+.const__y { display: block; margin-top: 10px; font-size: 10px; color: var(--faint); letter-spacing: 0.1em; }
+.const__c.is-new {
+  border-color: var(--steel-dk);
+  background: linear-gradient(180deg, rgba(138, 155, 171, 0.08), transparent 70%), var(--panel);
+}
+.const__c.is-new b { color: var(--steel-lt); }
+.const__c.is-new .const__y { color: var(--steel); }
+
+.cover__foot {
+  margin-top: clamp(32px, 4vw, 56px);
+  padding-top: 26px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: 40px;
+  align-items: start;
+}
+.cover__list { margin: 0; font-size: 14px; line-height: 1.9; color: var(--paper-2); }
+.cover__foot .note { margin: 0; }
+
+/* ───────────────────────────────────────────────────── 04 · THE HOUSE ── */
+
+.house {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-rows: 132px;
+  gap: 12px;
+}
+.house__plate { position: relative; margin: 0; overflow: hidden; background: var(--panel); border: 1px solid var(--line); }
+.house__plate img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  will-change: object-position, transform;
+}
+.house__plate figcaption {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 26px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--paper-2);
+  background: linear-gradient(transparent, rgba(4, 6, 10, 0.92));
+}
+.house__plate figcaption a { color: var(--faint); font-size: 9.5px; letter-spacing: 0.08em; text-decoration: none; text-transform: uppercase; }
+.house__plate figcaption a:hover { color: var(--steel); }
+
+.house__plate--lead { grid-column: span 7; grid-row: span 3; }
+.house__plate--tall { grid-column: span 5; grid-row: span 2; }
+.house__plate--wide { grid-column: span 12; grid-row: span 2; }
+
+.house__card {
+  grid-column: span 5;
+  grid-row: span 3;
+  background: var(--panel);
+  border: 1px solid var(--steel-dk);
+  padding: clamp(22px, 2.4vw, 34px);
+}
+.house__addr {
+  font-style: normal;
+  font-size: clamp(19px, 2vw, 27px);
+  line-height: 1.35;
+  letter-spacing: -0.03em;
+  margin: 0 0 26px;
+}
+.house__meta { margin: 0; display: grid; gap: 16px; }
+.house__meta > div { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.house__meta dt { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--faint); }
+.house__meta dd { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--paper-2); }
+
+.house__walk {
+  grid-column: span 5;
+  grid-row: span 2;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  display: grid;
+}
+.house__walk li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--line);
+}
+.house__walk li:last-child { border-bottom: 0; }
+.house__wk { font-size: 13.5px; letter-spacing: -0.01em; }
+.house__wv { font-size: 10.5px; color: var(--faint); text-align: right; text-transform: uppercase; letter-spacing: 0.08em; }
+
+/* ──────────────────────────────────────────────────── 05 · THE LEDGER ── */
+
+.figs {
+  list-style: none;
+  margin: 0 0 clamp(36px, 4vw, 60px);
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+.fig { background: var(--ink); padding: 26px 22px 28px; min-width: 0; }
+.fig__n { margin: 0; font-size: clamp(26px, 3vw, 42px); line-height: 1; letter-spacing: -0.045em; font-weight: 300; color: var(--steel-lt); }
+.fig__k { margin: 14px 0 6px; font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--paper); }
+.fig__note { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--faint); }
+
+.ldg { width: 100%; border-collapse: collapse; border: 1px solid var(--line); }
+.ldg__r { border-bottom: 1px solid var(--line); }
+.ldg__r:last-child { border-bottom: 0; }
+.ldg__r.is-key { background: linear-gradient(90deg, rgba(138, 155, 171, 0.07), transparent 55%); }
+.ldg__k { text-align: left; font-weight: 600; font-size: 14.5px; letter-spacing: -0.02em; padding: 18px 22px; width: 30%; }
+.ldg__v { font-size: 16px; color: var(--steel-lt); padding: 18px 22px; width: 16%; white-space: nowrap; }
+.ldg__r.is-key .ldg__v { color: var(--up); }
+.ldg__n { font-size: 12.5px; line-height: 1.55; color: var(--dim); padding: 18px 22px; }
+
+.warn {
+  margin-top: clamp(32px, 4vw, 56px);
+  border: 1px solid rgba(180, 70, 47, 0.4);
+  background: linear-gradient(180deg, rgba(180, 70, 47, 0.08), transparent 60%);
+  padding: clamp(20px, 2.4vw, 30px);
+}
+.warn__k { margin: 0 0 12px; font-size: 10.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--oxide); }
+.warn p { margin: 0; font-size: 13px; line-height: 1.65; color: var(--paper-2); max-width: 92ch; }
+
+/* ─────────────────────────────────────────────────────────── responsive ── */
+
+@media (max-width: 1080px) {
+  .rail__stages { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .figs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sc--lead { grid-column: span 12; grid-row: span 1; }
+  .sc--wide, .sc--tall, .sc--unit { grid-column: span 6; grid-row: span 1; }
+  .house__plate--lead, .house__card, .house__plate--tall, .house__walk, .house__plate--wide { grid-column: span 12; }
+  .house { grid-auto-rows: 118px; }
+}
+
+@media (max-width: 820px) {
+  .zn__head--split, .cover__foot { grid-template-columns: 1fr; gap: 22px; align-items: start; }
+  .rail__stages { grid-template-columns: 1fr; }
+  .facts, .figs { grid-template-columns: 1fr; }
+  .sc--wide, .sc--tall, .sc--unit { grid-column: span 12; }
+  .ldg, .ldg tbody, .ldg tr, .ldg th, .ldg td { display: block; width: auto; }
+  .ldg__r { padding: 16px 18px; }
+  .ldg__k, .ldg__v, .ldg__n { padding: 0; }
+  .ldg__v { margin: 6px 0; }
+  .house__meta > div { grid-template-columns: 1fr; gap: 4px; }
+  /* Sections must not fight the reader on a phone: kill the parallax drift. */
+  .sc { transform: none !important; }
+  .zn--tape .zn__in { filter: none; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-slow { animation: none; }
+  .sc, .const__c, .house__plate img { transform: none !important; }
+  .zn__h, .fact, .fig, .ldg__r, .house__walk li { clip-path: none !important; }
+  .zn--tape .zn__in { filter: none; transform: none; }
+}
+
+/* ──────────────────────────────────────────── 06 · THE INSTRUMENT (shear) ── */
+
+.feat {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
+  gap: clamp(20px, 3vw, 48px);
+  align-items: start;
+}
+.feat__col { display: grid; gap: clamp(16px, 2vw, 28px); will-change: transform; }
+.feat__spine {
+  align-self: stretch;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, var(--line-2), transparent);
+  transform-origin: top center;
+}
+
+.ft {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  padding: clamp(20px, 2.2vw, 30px);
+  will-change: transform, opacity;
+  transition: border-color 200ms ease;
+}
+.ft:hover { border-color: var(--line-2); }
+.ft__h {
+  margin: 0 0 12px;
+  font-size: clamp(17px, 1.7vw, 23px);
+  line-height: 1.18;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+  text-wrap: balance;
+}
+.ft__b { margin: 0 0 20px; font-size: 13px; line-height: 1.62; color: var(--paper-2); }
+.ft__spec { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.ft__spec > div { background: var(--panel); padding: 12px 14px; }
+.ft__spec dt { font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--faint); }
+.ft__spec dd { margin: 5px 0 0; font-size: 12px; color: var(--paper); }
+
+/* ─────────────────────────────────────────────────────── 07 · THE CLOSE ── */
+
+.zn--close { text-align: center; }
+.zn--close .zn__in { max-width: 940px; }
+.close__h {
+  margin: 10px 0 0;
+  font-size: clamp(36px, 6.4vw, 86px);
+  line-height: 0.96;
+  font-weight: 200;
+  text-wrap: balance;
+}
+.close__h em {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--steel-lt);
+}
+.close__list {
+  list-style: none;
+  margin: clamp(26px, 3vw, 40px) auto 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+  max-width: 62ch;
+  text-align: left;
+}
+.close__list li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--paper-2);
+}
+.close__tick { width: 16px; height: 16px; flex: none; margin-top: 2px; color: var(--steel); }
+
+.close__act {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: clamp(28px, 3vw, 44px);
+}
+
+.close__foot {
+  margin-top: clamp(48px, 6vw, 84px);
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 26px;
+  text-align: left;
+}
+.close__foot p { margin: 0; font-size: 12px; line-height: 1.55; color: var(--dim); }
+.close__foot p.mono {
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 7px;
+}
+
+@media (max-width: 900px) {
+  .feat { grid-template-columns: 1fr; }
+  .feat__spine { display: none; }
+  /* Opposing scroll directions on a phone is nausea, not interest. */
+  .feat__col { transform: none !important; }
+  .close__foot { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .ft__spec { grid-template-columns: 1fr; }
+  .close__foot { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .feat__col, .ft { transform: none !important; }
+  .ft__h, .close__h, .close__list li { clip-path: none !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MOBILE — different compositions, not the same stack narrowed
+   The complaint was fair: every zone collapsed to one column and scrolling
+   became a single downward corridor. Below 820px each zone now gets its OWN
+   geometry — horizontal snap rails, a stepped timeline, a tessellated chip
+   cloud, overlapping full-bleed plates, an accordion ledger. The page should
+   feel like it changes shape in the hand.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 820px) {
+
+  .zn { padding: 62px 0; }
+  .zn__in { padding: 0 18px; }
+  .zn__h { font-size: clamp(29px, 9vw, 44px); letter-spacing: -0.045em; }
+
+  /* Every zone gets a different edge treatment so bands stop looking alike. */
+  .zn--rail  { border-top: 1px solid var(--steel-dk); }
+  .zn--tape  { background: linear-gradient(180deg, var(--ink-2), var(--ink)); }
+  .zn--cover { background: var(--ink); }
+  .zn--house { background: linear-gradient(180deg, var(--ink), #120f13); }
+  .zn--feat  { background: var(--ink-2); }
+  .zn--ledger{ background: var(--ink); }
+
+  /* ── 01 RAIL → stepped vertical timeline with a live spine ──────────── */
+  .rail__gauge { display: none; }
+  .rail__stages {
+    display: block;
+    border: 0;
+    background: none;
+    position: relative;
+    padding-left: 30px;
+  }
+  .rail__stages::before {
+    content: "";
+    position: absolute;
+    left: 8px; top: 6px; bottom: 6px;
+    width: 2px;
+    background: var(--line);
+  }
+  .rail__stages::after {
+    content: "";
+    position: absolute;
+    left: 8px; top: 6px;
+    width: 2px;
+    height: calc(var(--clock, 0) * 100%);
+    background: linear-gradient(180deg, var(--steel), var(--petrol));
+    box-shadow: 0 0 14px rgba(138,155,171,0.55);
+  }
+  .rail__stage {
+    position: relative;
+    background: none !important;
+    padding: 0 0 26px 0;
+  }
+  .rail__stage .rail__dot {
+    position: absolute;
+    left: -26px; top: 5px;
+    margin: 0;
+    width: 10px; height: 10px;
+  }
+  .rail__t { display: inline-block; margin-bottom: 5px; }
+
+  /* Facts become a peeking horizontal rail — thumb-driven, not scroll-driven */
+  .facts {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 74%;
+    grid-template-columns: none;
+    gap: 10px;
+    background: none;
+    border: 0;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 2px 18px 14px;
+    margin-inline: -18px;
+    scrollbar-width: none;
+  }
+  .facts::-webkit-scrollbar { display: none; }
+  .fact {
+    scroll-snap-align: center;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    border-radius: 2px;
+  }
+  .fact:nth-child(even) { border-color: var(--petrol-dk); }
+
+  /* ── 02 TAPE → full-bleed swipe deck, one card at a time ────────────── */
+  .scat {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 86%;
+    grid-template-columns: none;
+    grid-auto-rows: auto;
+    gap: 12px;
+    background: none;
+    border: 0;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 4px 18px 18px;
+    margin-inline: -18px;
+    scrollbar-width: none;
+  }
+  .scat::-webkit-scrollbar { display: none; }
+  .sc {
+    grid-column: auto !important;
+    grid-row: auto !important;
+    scroll-snap-align: center;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    min-height: 320px;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+  /* Alternate the card personality so swiping never shows the same thing twice */
+  .sc:nth-child(3n+1) { background: linear-gradient(165deg, #191317, var(--panel)); }
+  .sc:nth-child(3n+2) { border-color: var(--steel-dk); }
+  .sc:nth-child(3n)   { border-color: var(--petrol-dk); }
+  .sc--lead .sc__fig  { font-size: 58px; }
+
+  .swipe-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin-bottom: 12px;
+  }
+  .swipe-hint i {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--line-2), transparent);
+  }
+
+  /* ── 03 COVERAGE → tessellated chip cloud, centre-weighted ──────────── */
+  .const {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+  }
+  .const__c {
+    flex: 0 0 auto;
+    padding: 9px 12px;
+    border-radius: 999px;
+    transform: none !important;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 7px;
+  }
+  .const__c b { display: inline; font-size: 12.5px; }
+  .const__n { display: inline; font-size: 11px; }
+  .const__y { display: none; }
+  .const__c:nth-child(4n)   { background: var(--panel-2); }
+  .const__c:nth-child(7n)   { border-color: var(--petrol-dk); }
+  .const__c.is-new { padding-inline: 16px; }
+
+  /* ── 04 HOUSE → overlapping full-bleed plates that break the margin ─── */
+  .house { display: block; }
+  .house__plate {
+    margin-inline: -18px;
+    height: 62vw;
+    border-inline: 0;
+  }
+  .house__plate--tall { height: 78vw; margin-top: -22px; margin-right: 34px; }
+  .house__plate--wide { height: 52vw; margin-top: -14px; margin-left: 34px; }
+  .house__card {
+    position: relative;
+    z-index: 2;
+    margin: -34px 0 0;
+    border-radius: 2px;
+  }
+  .house__walk { margin-top: 14px; }
+  .house__walk li { padding: 13px 16px; }
+
+  /* ── 06 FEATURES → horizontal deck, spine removed ───────────────────── */
+  .feat {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 84%;
+    grid-template-columns: none;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 2px 18px 16px;
+    margin-inline: -18px;
+    scrollbar-width: none;
+  }
+  .feat::-webkit-scrollbar { display: none; }
+  .feat__col { display: contents; }
+  .ft {
+    scroll-snap-align: center;
+    transform: none !important;
+    opacity: 1 !important;
+    min-height: 340px;
+  }
+  .ft:nth-child(even) { border-color: var(--petrol-dk); }
+
+  /* ── 05 LEDGER → dense two-line rows, no table shape ────────────────── */
+  .figs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+  }
+  .fig__n { font-size: 24px; }
+  .ldg__r {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px 12px;
+    padding: 14px 16px;
+    align-items: baseline;
+  }
+  .ldg__k { grid-column: 1; padding: 0; font-size: 14px; }
+  .ldg__v { grid-column: 2; grid-row: 1; padding: 0; text-align: right; font-size: 15px; }
+  .ldg__n { grid-column: 1 / -1; padding: 0; font-size: 11.5px; }
+  .ldg__r.is-key { background: linear-gradient(90deg, rgba(138,155,171,0.12), transparent 70%); }
+
+  /* ── 07 CLOSE ───────────────────────────────────────────────────────── */
+  .close__h { font-size: clamp(34px, 11vw, 52px); }
+  .close__act { flex-direction: column; }
+  .close__act .hbtn { justify-content: center; width: 100%; }
+
+  /* Hero: shorter pin, tighter type, transport out of the way */
+  .plate__readout { gap: 16px; }
+  .plate__readout dd { font-size: 11px; }
+  .hero__cue { bottom: 60px; }
+}
+
+/* Very small phones — stop the swipe decks eating the whole screen */
+@media (max-width: 400px) {
+  .scat { grid-auto-columns: 90%; }
+  .feat { grid-auto-columns: 90%; }
+  .facts { grid-auto-columns: 82%; }
+  .figs { grid-template-columns: 1fr; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   BRAND SPLASH
+   Blank field → mark → tagline → lift. The page is already rendered
+   underneath; this is an overlay that leaves, not a gate that opens.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  background: #080808;
+  opacity: 1;
+  transition: opacity var(--fade, 620ms) cubic-bezier(0.4, 0, 0.2, 1),
+              transform var(--fade, 620ms) cubic-bezier(0.4, 0, 0.2, 1);
+}
+.splash.is-out {
+  opacity: 0;
+  /* A whisper of scale so the page feels like it rises to meet you rather
+     than the overlay simply vanishing. */
+  transform: scale(1.02);
+  pointer-events: none;
+}
+
+.splash__in {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: splashIn 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes splashIn {
+  0%   { opacity: 0; transform: translateY(10px); letter-spacing: 0.10em; }
+  100% { opacity: 1; transform: translateY(0);    letter-spacing: normal; }
+}
+
+/* Hairline that draws itself under the lockup — the only motion in the frame. */
+.splash__rule {
+  display: block;
+  width: 0;
+  height: 1px;
+  margin-top: 38px;
+  background: linear-gradient(90deg, transparent, #2a2a2a 20%, #8a9bab, #2a2a2a 80%, transparent);
+  animation: splashRule 1000ms 240ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes splashRule {
+  from { width: 0;     opacity: 0; }
+  to   { width: 420px; opacity: 1; }
+}
+
+@media (max-width: 520px) {
+  .splash__in { padding: 0 24px; }
+  @keyframes splashRule { from { width: 0; opacity: 0; } to { width: 180px; opacity: 1; } }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash, .splash__in, .splash__rule { animation: none !important; transition: none !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DASHBOARD POLISH
+   The app surfaces were inherited from the old build and still read as a
+   template: heavy rounding, drop shadows doing the work borders should do,
+   and every panel the same weight. Flattened onto the neutral scheme —
+   structure comes from hairlines and spacing, emphasis from typography.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: none;                 /* borders, not shadows */
+}
+.card-flat { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+
+/* The "premium" surface is now a slightly lifted plane with a steel hairline
+   at the top edge, rather than a coloured glow. */
+.card-gold {
+  border-color: var(--line);
+  position: relative;
+  box-shadow: none;
+}
+.card-gold::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--steel), transparent);
+  opacity: 0.55;
+}
+
+/* Figures are the point of a bank UI. Give every number tabular spacing and
+   the display face, so columns line up and totals read as totals. */
+.tnum, .card .tnum { font-variant-numeric: tabular-nums; }
+
+.stat-figure {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--paper);
+}
+
+/* Row lists — transactions, beneficiaries, holdings */
+.row-list { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.row-list > * + * { border-top: 1px solid var(--line); }
+.row-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  transition: background 120ms ease;
+}
+.row-item:hover { background: var(--panel-2); }
+
+/* Sidebar chrome sits a hair darker than content, per the scheme. */
+.dash-chrome { background: var(--ink-2); border-color: var(--line); }
+
+/* Data colours are reserved for data. A green button would make the green
+   meaningless the first time it appeared on a figure. */
+.up   { color: var(--up); }
+.down { color: var(--down); }
+.warn { color: var(--warn); }
+.pill-up   { background: rgba(61,155,110,0.12);  color: var(--up); }
+.pill-down { background: rgba(196,92,92,0.12);   color: var(--down); }
+.pill-warn { background: rgba(184,122,74,0.12);  color: var(--warn); }
+
+/* Inputs: quieter resting state, steel focus. */
+.field {
+  background: var(--ink-2);
+  border-color: var(--line);
+  border-radius: 10px;
+}
+.field:hover { border-color: var(--line-2); }
+.field:focus {
+  border-color: var(--steel);
+  box-shadow: 0 0 0 3px rgba(138,155,171,0.14);
+  background: var(--ink-2);
+}
+
+.btn { border-radius: 10px; }
+.btn-ghost { border-color: var(--line); }
+.btn-ghost:hover { background: var(--panel-2); border-color: var(--line-2); }
+
+/* ── news card photography ─────────────────────────────────────────────── */
+
+.sc__shot {
+  position: relative;
+  margin: calc(clamp(20px, 2vw, 30px) * -1) calc(clamp(20px, 2vw, 30px) * -1) 4px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel-2);
+}
+.sc__shot img {
+  display: block;
+  width: 100%;
+  height: 168px;
+  object-fit: cover;
+  /* Desaturated and dimmed so photography supports the text instead of
+     shouting over it — press pages, not a travel brochure. */
+  filter: grayscale(0.28) contrast(1.08) brightness(0.94) saturate(0.9);
+  transition: filter 500ms ease, transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.sc:hover .sc__shot img {
+  filter: grayscale(0) contrast(1.1) brightness(1.02) saturate(1);
+  transform: scale(1.04);
+}
+.sc--lead .sc__shot img { height: 240px; }
+.sc--tall .sc__shot img { height: 200px; }
+
+.sc__shot figcaption {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 22px 12px 7px;
+  background: linear-gradient(transparent, rgba(8, 8, 8, 0.92));
+}
+.sc__shot figcaption a {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+  text-decoration: none;
+}
+.sc__shot figcaption a:hover { color: var(--steel); }
+
+@media (max-width: 820px) {
+  .sc__shot { margin: -20px -20px 4px; }
+  .sc__shot img,
+  .sc--lead .sc__shot img,
+  .sc--tall .sc__shot img { height: 150px; }
+}
+
+/* ── splash: responsive lockup ──────────────────────────────────────────
+   The xl lockup is sized for a desktop viewport. On a phone the mark, the
+   wordmark and a tagline tracked out to 0.26em together overflow 360px and
+   the ends get clipped. Everything below is driven by clamp() against the
+   viewport so the whole lockup always fits, and the tagline is allowed to
+   wrap onto two lines rather than being cut off. */
+
+.splash { padding: 24px; }
+
+.splash__in { width: 100%; max-width: 900px; }
+
+.splash__logo { width: 100%; }
+
+.splash__logo svg {
+  /* The vw floor is what drives mobile size — 26vw on a 390px phone is ~101px,
+     against 66px before. */
+  width: clamp(88px, 26vw, 150px) !important;
+  height: clamp(88px, 26vw, 150px) !important;
+}
+
+.splash__logo .font-display {
+  font-size: clamp(52px, 17vw, 104px) !important;
+  line-height: 1;
+}
+
+/* The tagline: shrink the tracking on narrow screens — 0.26em is what pushes
+   it past the edge — and let it wrap centred. */
+.splash__logo > span > span:last-child,
+.splash__logo span[style*="uppercase"] {
+  font-size: clamp(13px, 3.9vw, 18px) !important;
+  letter-spacing: clamp(0.13em, 0.85vw, 0.28em) !important;
+  max-width: 92vw;
+  white-space: normal;
+  text-wrap: balance;
+  line-height: 1.6;
+}
+
+@media (max-width: 420px) {
+  .splash__rule { animation-name: splashRuleSm; }
+}
+@keyframes splashRuleSm {
+  from { width: 0; opacity: 0; }
+  to   { width: min(340px, 82vw); opacity: 1; }
+}
+
+/* Tagline arrives after the mark has settled, so the eye reads them in order */
+.splash__logo span[style*="uppercase"] {
+  animation: splashTag 900ms 620ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes splashTag {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── a face on the story ───────────────────────────────────────────────── */
+
+.sc__face {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel-2);
+  text-decoration: none;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.sc__face:hover { border-color: var(--line-2); background: var(--panel-3); }
+.sc__face img {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
+  filter: grayscale(0.15) contrast(1.05);
+  border: 1px solid var(--line-2);
+}
+.sc__face span { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.sc__face b {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--paper);
+  letter-spacing: -0.01em;
+}
+.sc__face i {
+  font-style: normal;
+  font-size: 10px;
+  color: var(--faint);
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LAYOUT & VIEWPORT FIXES
+   Overflow guards and small-screen corrections. Most "broken on mobile" bugs
+   in a dashboard are one unconstrained grid child forcing the whole page
+   wider than the viewport, so the rules below are mostly about min-width.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* ⚠️ DO NOT put `overflow-x: hidden` on html or body.
+   It turns the root into a scroll container, and every `position: sticky`
+   descendant silently stops sticking — which kills the pinned hero. This is
+   exactly what broke it once already.
+
+   `overflow-x: clip` is the safe equivalent: it clips without establishing a
+   scroll container, so sticky keeps working. Applied to body only, and the
+   real fix for sideways drift is the min-width guards below. */
+html { max-width: 100%; }
+body { max-width: 100%; overflow-x: clip; }
+
+/* A grid/flex child defaults to min-width:auto and refuses to shrink below its
+   content. Long IBANs, references and hashes then push the page sideways. */
+main, section, article { min-width: 0; }
+.card > *, .row-item > * { min-width: 0; }
+
+/* Anything monospace and long gets to break rather than escape. */
+.font-mono, .mono, [class*="tnum"] { overflow-wrap: anywhere; }
+
+/* Tables inside cards scroll themselves instead of widening the page. */
+.card table { width: 100%; display: block; overflow-x: auto; }
+@media (min-width: 821px) { .card table { display: table; } }
+
+@media (max-width: 900px) {
+  /* Dashboard shell: the fixed sidebar is hidden below lg, so drop the offset
+     that was still reserving 256px of dead space on tablets. */
+  .dash-main { padding-left: 0 !important; }
+}
+
+@media (max-width: 640px) {
+  /* The balance figure at 62px overflows a 320px screen once it passes
+     six digits plus a thousands separator. */
+  .stat-figure { font-size: clamp(30px, 11vw, 44px) !important; }
+
+  /* Modals were full-height on small screens with no way to reach the buttons. */
+  .fixed.inset-0 > .card,
+  .fixed.inset-0 > div > .card { max-height: 88vh; overflow-y: auto; }
+
+  /* Quick-action toolbar: four labels get cramped, so let them shrink. */
+  .grid.grid-cols-4 > a { padding-inline: 4px; }
+}
+
+/* iOS: 100vh includes the browser chrome and clips the bottom of full-height
+   screens. svh is the honest unit. */
+@supports (height: 100svh) {
+  .min-h-screen { min-height: 100svh; }
+}
+
+/* Sticky chrome sits above content and below modals — scoped to the app
+   shell. A blanket `.sticky { z-index }` would also hit the hero stage and
+   the KYC step rail, which manage their own stacking. */
+.dash-chrome.sticky,
+header.sticky { z-index: 20; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ACCOUNT HERO — the one light surface in the app
+   Inverting the most important panel is the oldest trick in financial print:
+   the statement is on paper, everything around it is not. It gives the
+   balance somewhere to sit that nothing else competes with, and it stops the
+   dashboard reading as an undifferentiated black sheet.
+   The gradient is warm white → bone, not grey, so it looks like paper under
+   a light rather than a switched-off screen.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+.acct-hero {
+  background:
+    radial-gradient(120% 140% at 88% -10%, #ffffff 0%, #f6f4ef 42%, #e9e5dc 100%);
+  border: 1px solid #d8d3c8;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 20px 50px -30px rgba(0, 0, 0, 0.85);
+  color: #14110d;
+}
+
+/* A hairline of the brand steel across the top edge, so the paper still
+   belongs to this bank. */
+.acct-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #5f6d7a, #8a9bab, #5f6d7a, transparent);
+  opacity: 0.85;
+}
+
+/* Faint engraved rule pattern — a security-print nod, kept almost invisible. */
+.acct-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(20, 17, 13, 0.028) 0px,
+    rgba(20, 17, 13, 0.028) 1px,
+    transparent 1px,
+    transparent 7px
+  );
+}
+
+.acct-hero__label  { color: #6b6357; }
+.acct-hero__muted  { color: #8b8375; }
+.acct-hero__value  { color: #14110d; }
+.acct-hero__figure { color: #0f0d0a; }
+
+.acct-hero__rule { border-top: 1px solid rgba(20, 17, 13, 0.14); }
+
+.acct-hero__btn {
+  border: 1px solid rgba(20, 17, 13, 0.18);
+  color: #5c5548;
+  background: rgba(255, 255, 255, 0.5);
+}
+.acct-hero__btn:hover { background: #ffffff; color: #14110d; }
+
+/* Toolbar: the 1px gaps show the paper's own ruling colour */
+.acct-hero__tools { background: rgba(20, 17, 13, 0.14); }
+.acct-hero__tool {
+  background: rgba(255, 255, 255, 0.62);
+  color: #3f3a31;
+}
+.acct-hero__tool:hover { background: #ffffff; color: #14110d; }
+.acct-hero__tool span { font-weight: 500; }
+
+.acct-hero__switch {
+  border: 1px solid rgba(20, 17, 13, 0.16);
+  background: rgba(255, 255, 255, 0.5);
+}
+.acct-hero__switch:hover { background: #ffffff; }
+.acct-hero__chip { background: rgba(20, 17, 13, 0.07); color: #5c5548; }
+
+@media (max-width: 640px) {
+  .acct-hero__figure { font-size: clamp(32px, 12vw, 46px) !important; }
+}
+
+/* ── the initials fallback for an unresolved portrait ─────────────────── */
+.sc__initials {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--panel-3);
+  border: 1px solid var(--line-2);
+  color: var(--paper-2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* ── dashboard shell ───────────────────────────────────────────────────── */
+
+.bg-ink-2, .dash-chrome { background: var(--ink-2); }
+
+/* Active nav: a steel spine on the leading edge rather than a filled pill.
+   Filled pills are the single most template-looking thing in a sidebar. */
+.nav-active {
+  position: relative;
+  background: var(--panel-2);
+  color: var(--paper);
+}
+.nav-active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  border-radius: 0 2px 2px 0;
+  background: var(--steel);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DASHBOARD TYPOGRAPHY
+   The app was running entirely on the UI sans at one weight, which is what
+   made it feel like a template. Three voices instead:
+     · Bodoni for anything that is a NUMBER THAT MATTERS — balances, prices,
+       totals. A didone at 40px reads as a bank; a grotesque reads as an app.
+     · Archivo for interface text, at 500 rather than 600 so it stops
+       shouting.
+     · Space Mono for identifiers — IBANs, references, tickers, timestamps —
+       because those want fixed advance widths.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+.stat-figure,
+.acct-hero__figure {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+/* Page and section headings on the app side */
+.dash-h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Labels: small, tracked, quiet. The workhorse of a financial interface. */
+.dash-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--paper-2);
+}
+
+/* Identifiers get the mono face and a slightly tighter tracking so a 22-char
+   IBAN still fits a narrow column. */
+.font-mono, .mono { letter-spacing: -0.01em; }
+
+/* Every figure in the app is tabular by default — columns of numbers that
+   don't line up are the single clearest sign nobody looked closely. */
+.card, .row-list, table, .acct-hero { font-variant-numeric: tabular-nums; }
+
+/* Body copy in panels: 500 weight reads better than 600 at these sizes on a
+   dark background, where type optically gains weight. */
+.card p, .card span, .card div { font-weight: inherit; }
+
+/* utility aliases for the steel accent, used by the avatar control */
+.bg-steel { background: var(--steel); }
+.bg-steel-lt, .hover\:bg-steel-lt:hover { background: var(--steel-lt); }
+.text-steel { color: var(--steel); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MOBILE: notifications panel and footer
+   ═════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 640px) {
+  /* The notifications dropdown was anchored to its bell with a fixed width,
+     so on a narrow screen it hung off the edge and squeezed. Pin it to the
+     viewport instead and let it use the full width, minus a gutter. */
+  .notif-panel {
+    position: fixed !important;
+    top: 64px !important;
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
+    max-height: min(70vh, 520px);
+    overflow-y: auto;
+  }
+
+  /* Footer: the lockup, the legal line and the contact link were on one row
+     and collided. Stack them, left-aligned, with real breathing room. */
+  .site-footer__in {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 22px !important;
+    text-align: left !important;
+  }
+  .site-footer__in > * { width: 100%; }
+  .site-footer__legal { line-height: 1.7; }
+}

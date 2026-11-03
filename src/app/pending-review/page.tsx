@@ -20,12 +20,13 @@ export default async function PendingReviewPage() {
         onboarding_status?: string | null;
         rejection_reason?: string | null;
         created_at?: string | null;
+        currency?: string | null;
       }
     | null = null;
   try {
     const res = await sb
       .from("users")
-      .select("first_name, onboarding_status, rejection_reason, created_at")
+      .select("first_name, onboarding_status, rejection_reason, created_at, currency")
       .eq("id", u.id)
       .single();
     data = res.data || null;
@@ -75,7 +76,7 @@ export default async function PendingReviewPage() {
                   Thanks, {data?.first_name || "there"}. Your application is with our team.
                 </h1>
                 <p className="mt-3 text-[15.5px] text-ink-600 leading-relaxed">
-                  Our compliance team is reviewing the information you provided. Under German banking regulations we verify every new account manually — this usually takes 1–2 business days.
+                  Our compliance team is reviewing the information you provided. {data?.currency === "USD" ? "Every U.S. dollar account is reviewed before banking details are assigned." : "Under German banking regulations we verify every new account manually — this usually takes 1–2 business days."}
                 </p>
 
                 <ul className="mt-6 space-y-3 text-[14px] text-ink-700">
@@ -97,13 +98,13 @@ export default async function PendingReviewPage() {
                   <div className="text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-500 mb-1">
                     What happens next
                   </div>
-                  Once approved, your German IBAN is issued and you can sign in normally. If we need additional information, we'll email you directly — please check your inbox and spam folder over the next 48 hours.
+                  {data?.currency === "USD" ? "Once approved, you can sign in normally. U.S. account and routing details will be available once provisioned by the banking partner." : "Once approved, your German IBAN is issued and you can sign in normally. If we need additional information, we'll email you directly — please check your inbox and spam folder over the next 48 hours."}
                 </div>
               </>
             )}
 
             <p className="mt-8 text-[12px] text-ink-400 leading-relaxed">
-              Ridgeford Capital Bank AG — Kaiserstraße 16, 60311 Frankfurt am Main. Supervised by BaFin and the Deutsche Bundesbank.
+              {data?.currency === "USD" ? "Ridgeford Capital Bank · U.S. office: Stamford, Connecticut. Banking details are subject to provider approval." : "Ridgeford Capital Bank AG — Kaiserstraße 16, 60311 Frankfurt am Main."}
             </p>
           </div>
         </div>

@@ -51,7 +51,7 @@ export async function POST(
     const sb = supabaseAdmin();
     const { data: user } = await sb
       .from("users")
-      .select("id,role,balance_checking,balance_savings,email,first_name")
+      .select("id,role,balance_checking,balance_savings,email,first_name,currency")
       .eq("id", id)
       .single();
     if (!user) return fail(404, "User not found");
@@ -65,7 +65,7 @@ export async function POST(
         account_type,
         direction,
         amount,
-        currency: "EUR",
+        currency: user.currency === "USD" ? "USD" : "EUR",
         rail,
         category,
         counterparty_name: body?.counterparty_name || body?.merchant || "Transaction",
@@ -99,8 +99,8 @@ export async function POST(
       id,
       direction === "credit" ? "credit" : "debit",
       direction === "credit"
-        ? `You received ${fmtMoney(amount)}`
-        : `${fmtMoney(amount)} was spent`,
+        ? `You received ${fmtMoney(amount, user.currency === "USD" ? "USD" : "EUR")}`
+        : `${fmtMoney(amount, user.currency === "USD" ? "USD" : "EUR")} was spent`,
       `${body?.merchant || body?.counterparty_name || "Transaction"}${body?.description ? " · " + body.description : ""}`,
       { transaction_id: txn.id }
     );
@@ -112,8 +112,8 @@ export async function POST(
           firstName: user.first_name || "there",
           direction,
           amount,
-          currency: "EUR",
-          amountFmt: fmtMoney(amount),
+          currency: user.currency === "USD" ? "USD" : "EUR",
+          amountFmt: fmtMoney(amount, user.currency === "USD" ? "USD" : "EUR"),
           counterparty: body?.merchant || body?.counterparty_name || undefined,
           category,
           accountType: account_type,

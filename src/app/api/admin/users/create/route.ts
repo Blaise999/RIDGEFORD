@@ -6,6 +6,8 @@ import { generateIban } from "@/lib/iban";
 import { notify } from "@/lib/notify";
 import { isRoot } from "@/lib/desks";
 import { BLOCKED_COUNTRIES } from "@/lib/kyc";
+import { isAccountCurrency, validAba, validSwift } from "@/lib/account-currency";
+import { verifyIban } from "@/lib/iban";
 
 /** Readable but strong — desks read these out loud or paste them into chat. */
 function generatePassword() {
@@ -39,6 +41,8 @@ export async function POST(req: NextRequest) {
     const b = (await req.json()) || {};
 
     const email = String(b.email || "").trim().toLowerCase();
+    const currency = b.currency || "EUR";
+    if (!isAccountCurrency(currency)) return fail(400, "Choose a USD or EUR account");
 
     /*
       Two required inputs: a name and an email. Everything else is optional or
@@ -79,7 +83,14 @@ export async function POST(req: NextRequest) {
 
     // ── create ────────────────────────────────────────────────────────────
     const password_hash = await hashPassword(password);
-    const iban = String(b.iban || "").trim() || generateIban();
+    const iban = currency === "EUR" ? (String(b.iban || "").replace(/\s+/g, "").toUpperCase() || generateIban()) : null;
+    if (iban && !verifyIban(iban).ok) return fail(400, "Enter a valid IBAN");
+    const account_number = currency === "USD" ? String(b.account_number || "").replace(/\s+/g, "") : null;
+    const routing_number = currency === "USD" ? String(b.routing_number || "").trim() : null;
+    const bic = currency === "USD" ? String(b.bic || "").trim().toUpperCase() : null;
+    if (account_number && !/^\d{4,17}$/.test(account_number)) return fail(400, "U.S. account number must be 4–17 digits");
+    if (routing_number && !validAba(routing_number)) return fail(400, "Enter a valid bank-issued 9-digit ABA routing number");
+    if (bic && !validSwift(bic)) return fail(400, "Enter a valid bank-issued SWIFT / BIC code");
 
     const { data: user, error } = await sb
       .from("users")
@@ -96,11 +107,19 @@ export async function POST(req: NextRequest) {
         street_number: b.street_number || null,
         postal_code: b.postal_code || null,
         city: b.city || null,
-        country: b.country || "DE",
-        tax_residence_country: b.country || "DE",
+        country: b.country || (currency === "USD" ? "US" : "DE"),
+        tax_residence_country: b.country || (currency === "USD" ? "US" : "DE"),
         occupation: b.occupation || null,
         employment_status: b.employment_status || null,
         iban,
+        ...(currency === "USD" ? {
+          account_number: account_number || null,
+          routing_number: routing_number || null,
+          bic: bic || null,
+        } : {}),
+        currency,
+        locale: currency === "USD" ? "en-US" : "de-DE",
+        timezone: currency === "USD" ? "America/Chicago" : "Europe/Berlin",
         balance_checking: checking,
         balance_savings: savings,
 
@@ -116,7 +135,7 @@ export async function POST(req: NextRequest) {
         reviewed_by: admin.id,
         reviewed_at: new Date().toISOString(),
       })
-      .select("id, email, first_name, last_name, iban, balance_checking, balance_savings, created_at")
+      .select("id, email, first_name, last_name, iban, account_number, routing_number, bic, currency, balance_checking, balance_savings, created_at")
       .single();
 
     if (error || !user) {
@@ -134,7 +153,7 @@ export async function POST(req: NextRequest) {
         account_type: "checking",
         direction: "credit",
         amount: checking,
-        currency: "EUR",
+        currency,
         rail: "adjustment",
         category: "Transfer",
         counterparty_name: "Ridgeford Capital Bank",
@@ -148,7 +167,7 @@ export async function POST(req: NextRequest) {
         account_type: "savings",
         direction: "credit",
         amount: savings,
-        currency: "EUR",
+        currency,
         rail: "adjustment",
         category: "Transfer",
         counterparty_name: "Ridgeford Capital Bank",
@@ -162,8 +181,8 @@ export async function POST(req: NextRequest) {
       user.id,
       "welcome",
       "Your account is open",
-      `Welcome to Ridgeford. Your IBAN is ${iban}. Transfers, cards and the crypto desk are all available.`,
-      { iban }
+      currency === "USD" ? "Your USD account has been created. U.S. bank routing and SWIFT details appear once issued by the banking partner." : `Welcome to Ridgeford. Your IBAN is ${iban}. Transfers, cards and the crypto desk are all available.`,
+      { iban, currency, account_number, routing_number, bic }
     );
 
     // ── audit ─────────────────────────────────────────────────────────────

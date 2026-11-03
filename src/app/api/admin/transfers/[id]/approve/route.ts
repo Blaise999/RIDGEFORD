@@ -5,6 +5,7 @@ import { ok, fail, handleError } from "@/lib/http";
 import { sendTransferApproved, sendReceipt, deferEmail } from "@/lib/email";
 import { notify } from "@/lib/notify";
 import { fmtMoney } from "@/lib/utils";
+import { accountCurrency } from "@/lib/account-currency";
 
 export async function POST(
   _req: NextRequest,
@@ -25,7 +26,7 @@ export async function POST(
 
     const { data: sender } = await sb
       .from("users")
-      .select("id,email,first_name,last_name,balance_checking,balance_savings,blocked,iban")
+      .select("id,email,first_name,last_name,balance_checking,balance_savings,blocked,iban,currency")
       .eq("id", transfer.user_id)
       .single();
     if (!sender) return fail(404, "Sender not found");
@@ -33,7 +34,7 @@ export async function POST(
 
     // For SWIFT in non-EUR, re-convert at approval time so the debit matches.
     let amt = Number(transfer.amount);
-    if (transfer.rail === "swift" && transfer.currency && String(transfer.currency).toUpperCase() !== "EUR") {
+    if (accountCurrency(sender.currency) === "EUR" && transfer.rail === "swift" && transfer.currency && String(transfer.currency).toUpperCase() !== "EUR") {
       const { convertToEur } = await import("@/lib/fx");
       amt = await convertToEur(Number(transfer.amount), String(transfer.currency));
       amt = Math.round(amt * 100) / 100;
@@ -65,7 +66,7 @@ export async function POST(
         account_type: accType,
         direction: "debit",
         amount: amt,
-        currency: transfer.currency,
+        currency: accountCurrency(sender.currency),
         rail: transfer.rail,
         category: "Transfer",
         counterparty_name: transfer.beneficiary_name,
@@ -82,9 +83,10 @@ export async function POST(
     if (transfer.rail === "internal" && transfer.beneficiary_user_id) {
       const { data: rec } = await sb
         .from("users")
-        .select("id,balance_checking,email,first_name,blocked")
+        .select("id,balance_checking,email,first_name,blocked,currency")
         .eq("id", transfer.beneficiary_user_id)
         .single();
+      if (!rec || rec.blocked || accountCurrency(rec.currency) !== accountCurrency(sender.currency)) return fail(409, "Recipient is unavailable or has a different account currency");
       if (rec && !rec.blocked) {
         await sb
           .from("users")
@@ -96,7 +98,7 @@ export async function POST(
           account_type: "checking",
           direction: "credit",
           amount: amt,
-          currency: transfer.currency,
+          currency: accountCurrency(sender.currency),
           rail: "internal",
           category: "Transfer",
           counterparty_name: sender.first_name || sender.email,

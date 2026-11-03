@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { COUNTRIES, EMPLOYMENT_STATUS } from "@/lib/kyc";
 import { formatIban } from "@/lib/iban";
+import { type AccountCurrency, currencySymbol } from "@/lib/account-currency";
 import { ArrowLeft, Check, ChevronDown, Copy, Loader2, RefreshCw, UserPlus } from "lucide-react";
 import { cx } from "@/lib/utils";
 
@@ -24,6 +25,7 @@ export default function NewUserPage() {
   const [full_name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [balance, setBalance] = useState("");
+  const [currency, setCurrency] = useState<AccountCurrency>("EUR");
   const [more, setMore] = useState(false);
   const [extra, setExtra] = useState<Record<string, any>>({
     password: "",
@@ -37,6 +39,9 @@ export default function NewUserPage() {
     employment_status: "",
     balance_savings: "",
     iban: "",
+    account_number: "",
+    routing_number: "",
+    bic: "",
   });
 
   const [busy, setBusy] = useState(false);
@@ -56,7 +61,7 @@ export default function NewUserPage() {
         method: "POST",
         headers: { "content-type": "application/json" },
         credentials: "same-origin",
-        body: JSON.stringify({ full_name, email, balance_checking: balance, ...extra }),
+        body: JSON.stringify({ full_name, email, currency, balance_checking: balance, ...extra }),
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok || !d.ok) throw new Error(d.error || "Could not open the account");
@@ -69,7 +74,7 @@ export default function NewUserPage() {
   }
 
   if (done) {
-    const creds = `Email: ${done.credentials.email}\nPassword: ${done.credentials.password}\nIBAN: ${done.user.iban}`;
+    const creds = `Email: ${done.credentials.email}\nPassword: ${done.credentials.password}\nCurrency: ${done.user.currency}\n${done.user.currency === "USD" ? `Account number: ${done.user.account_number || "Pending bank provisioning"}\nRouting (ABA): ${done.user.routing_number || "Not assigned"}\nSWIFT: ${done.user.bic || "Not assigned"}` : `IBAN: ${done.user.iban || "Pending"}`}`;
     return (
       <div className="max-w-lg mx-auto pt-10">
         <div className="rounded-2xl border border-ink-200 bg-panel p-7 text-center">
@@ -84,7 +89,12 @@ export default function NewUserPage() {
           <div className="mt-6 rounded-xl border border-ink-200 bg-ink-2 p-4 text-left font-mono text-[12.5px] text-ink-800 space-y-1.5">
             <div>{done.credentials.email}</div>
             <div>{done.credentials.password}</div>
-            <div className="text-ink-500">{formatIban(done.user.iban)}</div>
+            <div className="text-ink-500">{done.user.currency} account</div>
+            {done.user.currency === "USD" ? (
+              <><div>Account number: {done.user.account_number || "Awaiting bank provisioning"}</div>
+              <div>Routing (ABA): {done.user.routing_number || "Not assigned"}</div>
+              <div>SWIFT / BIC: {done.user.bic || "Not assigned"}</div></>
+            ) : <div className="text-ink-500">IBAN: {done.user.iban ? formatIban(done.user.iban) : "Pending"}</div>}
           </div>
 
           <p className="mt-3 text-[11.5px] leading-relaxed text-ink-400">
@@ -140,11 +150,23 @@ export default function NewUserPage() {
 
       <h1 className="dash-h1 mt-3 text-[28px] text-ink-900">Open an account</h1>
       <p className="mt-1 text-[13px] text-ink-500">
-        A name and an email is all it takes. The password and IBAN generate
-        themselves, and the account is ready to sign into immediately.
+        A name and an email is all it takes. Choose EUR (default) or add a USD account. EUR IBANs follow the existing workflow; U.S. banking details require bank provisioning.
       </p>
 
       <form onSubmit={submit} className="mt-7 space-y-4">
+        <fieldset className="currency-choice">
+          <legend className="label mb-2">Currency / account region</legend>
+          <div className="currency-choice__grid">
+            {(["EUR", "USD"] as const).map((c) => (
+              <button type="button" key={c} aria-pressed={currency === c}
+                className={`currency-choice__item ${currency === c ? "is-selected" : ""}`}
+                onClick={() => setCurrency(c)}>
+                <strong>{currencySymbol(c)}</strong><span><b>{c} account</b><small>{c === "USD" ? "U.S. dollar" : "Euro"}</small></span>
+                {currency === c && <Check className="h-4 w-4 ml-auto" />}
+              </button>
+            ))}
+          </div>
+        </fieldset>
         {err && (
           <div className="rounded-xl border border-[rgba(196,92,92,0.35)] bg-[rgba(196,92,92,0.08)] px-4 py-3 text-[13px] down">
             {err}
@@ -213,7 +235,7 @@ export default function NewUserPage() {
             </label>
           </div>
 
-          <label className="block">
+          {currency === "EUR" ? <label className="block">
             <span className="label">IBAN</span>
             <input
               className="field h-12 font-mono"
@@ -224,7 +246,15 @@ export default function NewUserPage() {
             <span className="hint">
               Generated with valid mod-97 check digits if you leave it empty.
             </span>
-          </label>
+          </label> : <div className="space-y-3">
+            <label className="block"><span className="label">U.S. account number (provided by your bank)</span>
+              <input className="field h-12 font-mono" value={extra.account_number} onChange={(e) => set("account_number", e.target.value.replace(/[^0-9]/g, ""))} placeholder="Leave empty until provisioned" /></label>
+            <label className="block"><span className="label">ABA routing number</span>
+              <input className="field h-12 font-mono" value={extra.routing_number} onChange={(e) => set("routing_number", e.target.value.replace(/\D/g, "").slice(0, 9))} placeholder="9 digits · only if officially assigned" /></label>
+            <label className="block"><span className="label">SWIFT / BIC (international wires)</span>
+              <input className="field h-12 font-mono uppercase" value={extra.bic} onChange={(e) => set("bic", e.target.value.toUpperCase().slice(0, 11))} placeholder="Only if issued by banking partner" /></label>
+            <p className="hint">Leave unavailable details blank; the account will show “Awaiting bank provisioning.” A SWIFT code identifies the bank, not an individual U.S. account.</p>
+          </div>}
 
           <label className="block">
             <span className="label">Opening balance (optional)</span>
@@ -236,7 +266,7 @@ export default function NewUserPage() {
                 onChange={(e) => setBalance(e.target.value.replace(/[^0-9.]/g, ""))}
                 placeholder="0"
               />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-500">€</span>
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-500">{currencySymbol(currency)}</span>
             </div>
             <span className="hint">Posted as a real &ldquo;Opening balance&rdquo; transaction.</span>
           </label>

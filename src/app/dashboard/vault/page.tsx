@@ -11,6 +11,7 @@ import {
   ArrowUpRight,
   X,
 } from "lucide-react";
+import { accountCurrency, type AccountCurrency } from "@/lib/account-currency";
 import { fmtMoney } from "@/lib/utils";
 
 type Vault = {
@@ -27,6 +28,7 @@ type Vault = {
 export default function VaultPage() {
   const [vaults, setVaults] = useState<Vault[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currency, setCurrency] = useState<AccountCurrency>("EUR");
   const [showCreate, setShowCreate] = useState(false);
   const [move, setMove] = useState<{
     vault: Vault;
@@ -52,6 +54,7 @@ export default function VaultPage() {
     }
   }
 
+  useEffect(() => { fetch("/api/auth/me").then(r => r.json()).then(d => { if(d?.ok) setCurrency(accountCurrency(d.user?.currency)); }).catch(() => {}); }, []);
   useEffect(() => {
     load();
   }, []);
@@ -155,11 +158,11 @@ export default function VaultPage() {
 
                 <div className="mt-3">
                   <div className="text-[22px] font-bold text-ink-900 tabular-nums">
-                    {fmtMoney(bal)}
+                    {fmtMoney(bal, currency)}
                   </div>
                   {goal > 0 && (
                     <div className="text-[12px] text-ink-400">
-                      of {fmtMoney(goal)} goal
+                      of {fmtMoney(goal, currency)} goal
                     </div>
                   )}
                 </div>
@@ -175,14 +178,14 @@ export default function VaultPage() {
 
                 {s.target_date && (
                   <div className="mt-2 text-[11.5px] text-ink-500">
-                    Target {new Date(s.target_date).toLocaleDateString("de-DE")}
+                    Target {new Date(s.target_date).toLocaleDateString(currency === "USD" ? "en-US" : "de-DE")}
                   </div>
                 )}
 
                 {s.locked_until && (
                   <div className="text-[11.5px] text-amber-300">
                     {locked ? "Locked until " : "Was locked until "}
-                    {new Date(s.locked_until).toLocaleDateString("de-DE")}
+                    {new Date(s.locked_until).toLocaleDateString(currency === "USD" ? "en-US" : "de-DE")}
                   </div>
                 )}
 
@@ -208,7 +211,7 @@ export default function VaultPage() {
       )}
 
       {showCreate && (
-        <CreateModal
+        <CreateModal currency={currency}
           onClose={() => setShowCreate(false)}
           onDone={async () => {
             setShowCreate(false);
@@ -218,7 +221,7 @@ export default function VaultPage() {
       )}
 
       {move && (
-        <MoveModal
+        <MoveModal currency={currency}
           vault={move.vault}
           action={move.action}
           onClose={() => setMove(null)}
@@ -266,9 +269,11 @@ function Modal({
 }
 
 function CreateModal({
+  currency,
   onClose,
   onDone,
 }: {
+  currency: AccountCurrency;
   onClose: () => void;
   onDone: () => void | Promise<void>;
 }) {
@@ -331,7 +336,7 @@ function CreateModal({
 
         <label className="block">
           <span className="text-[12.5px] font-semibold text-ink-700">
-            Goal amount (€) — optional
+            Goal amount ({currency}) — optional
           </span>
           <input
             value={goal}
@@ -402,6 +407,7 @@ function CreateModal({
 }
 
 function MoveModal({
+  currency,
   vault,
   action,
   onClose,
@@ -409,6 +415,7 @@ function MoveModal({
 }: {
   vault: Vault;
   action: "deposit" | "withdraw";
+  currency: AccountCurrency;
   onClose: () => void;
   onDone: () => void | Promise<void>;
 }) {
@@ -447,7 +454,7 @@ function MoveModal({
       <div className="vault-y-3">
         <label className="block">
           <span className="text-[12.5px] font-semibold text-ink-700">
-            Amount (€)
+            Amount ({currency})
           </span>
           <input
             value={amount}

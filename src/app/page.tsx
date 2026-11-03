@@ -1,3 +1,4 @@
+import UsdDeskAddOn from "@/components/landing/UsdDeskAddOn";
 import Hero from "@/components/hero/Hero";
 import BrandSplash from "@/components/brand/BrandSplash";
 import { ZoneRail, ZoneTape } from "@/components/landing/zones/ZoneRail";
@@ -12,9 +13,9 @@ import {
 } from "@/components/landing/zones/ZoneFeatures";
 
 export const metadata = {
-  title: "Ridgeford Capital Bank — euro banking from Frankfurt",
+  title: "Ridgeford Capital Bank — European banking, connected globally",
   description:
-    "Euro current and savings accounts across all twenty-one members of the euro area. Instant transfers in under ten seconds, a free name check on every payment, and a digital-asset desk priced on the ticket. Kaiserstraße 16, Frankfurt am Main.",
+    "Ridgeford is headquartered in Frankfurt am Main, with euro accounts at its centre, optional USD accounts and a U.S. office presence in Stamford, Connecticut.",
 };
 
 /**
@@ -48,6 +49,9 @@ export default function LandingPage() {
 
       {/* 02 — European finance, scattered and sourced */}
       <ZoneTape />
+
+      {/* Added U.S. desk and verified finance news — closer to the main story */}
+      <UsdDeskAddOn />
 
       {/* 03 — twenty-one countries */}
       <ZoneCoverage />

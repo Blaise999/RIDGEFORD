@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { ok, fail, handleError } from "@/lib/http";
 import { notify } from "@/lib/notify";
 import { generateIban } from "@/lib/utils";
+import { accountCurrency } from "@/lib/account-currency";
 import { deferEmail, sendOnboardingApproved, sendOnboardingRejected } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     const { data: user } = await sb
       .from("users")
-      .select("id, email, first_name, iban")
+      .select("id, email, first_name, iban, currency")
       .eq("id", app.user_id)
       .single();
     if (!user) return fail(404, "Customer not found");
@@ -111,7 +112,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     if (action === "approve") {
-      const iban = user.iban || generateIban();
+      const currency = accountCurrency(user.currency);
+      const iban = currency === "EUR" ? (user.iban || generateIban()) : null;
       await sb
         .from("kyc_applications")
         .update({ ...base, status: "approved" })
@@ -124,6 +126,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           kyc_approved_at: now,
           email_verified: true,
           iban,
+          bic: currency === "USD" ? null : undefined,
           reviewed_at: now,
           reviewed_by: admin.id,
           rejection_reason: null,
@@ -134,12 +137,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         user.id,
         "kyc_approved",
         "Your account is open",
-        `Verification complete. Your IBAN is ${iban}. Cards, transfers and the crypto desk are now unlocked.`,
-        { iban }
+        currency === "USD" ? "Your USD account is approved. U.S. banking details will display when officially provisioned." : `Verification complete. Your IBAN is ${iban}. Cards, transfers and the crypto desk are now unlocked.`,
+        { iban, currency }
       );
-      deferEmail(() => sendOnboardingApproved(user.email, user.first_name || "there", iban));
+      deferEmail(() => sendOnboardingApproved(user.email, user.first_name || "there", iban || undefined, currency));
       await audit(sb, admin.id, "kyc_approve", user.id, notes);
-      return ok({ status: "approved", iban });
+      return ok({ status: "approved", iban, currency });
     }
 
     return fail(400, "Unknown action");

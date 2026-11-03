@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { hashPassword, signSession, setSessionCookie } from "@/lib/auth";
 import { ok, fail, handleError } from "@/lib/http";
 import { BLOCKED_COUNTRIES } from "@/lib/kyc";
+import { isAccountCurrency } from "@/lib/account-currency";
 import { resolveDesk, recordClaim } from "@/lib/desks";
 
 /**
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
     const body = (await req.json()) || {};
     const {
       first_name, last_name, email, password, phone, residence_country,
-      consent_terms, consent_privacy, referral_code,
+      consent_terms, consent_privacy, referral_code, currency,
     } = body;
 
     if (!email || !password) return fail(400, "Email and password are required");
@@ -31,6 +32,7 @@ export async function POST(req: NextRequest) {
       return fail(400, "Mix letters and numbers in your password");
     }
     if (!residence_country) return fail(400, "Select your country of residence");
+    if (!isAccountCurrency(currency ?? "EUR")) return fail(400, "Choose a USD or EUR account");
     if (BLOCKED_COUNTRIES.includes(String(residence_country))) {
       return fail(403, "We're not able to open accounts for residents of that country.");
     }
@@ -64,6 +66,10 @@ export async function POST(req: NextRequest) {
         phone: phone || null,
         country: residence_country,
         iban: null,
+        ...(currency === "USD" ? { bic: null, account_number: null, routing_number: null } : {}),
+        currency: currency || "EUR",
+        locale: currency === "USD" ? "en-US" : "de-DE",
+        timezone: currency === "USD" ? "America/Chicago" : "Europe/Berlin",
         balance_checking: 0,
         balance_savings: 0,
         admin_owner_id: desk.admin_owner_id,
@@ -73,7 +79,7 @@ export async function POST(req: NextRequest) {
         kyc_status: "not_started",
         email_verified: false,
       })
-      .select("id, email, role, first_name, onboarding_status")
+      .select("id, email, role, first_name, onboarding_status, currency")
       .single();
 
     if (error || !data) {

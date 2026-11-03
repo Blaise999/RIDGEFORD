@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Archivo:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -1926,4 +1926,279 @@ header.sticky { z-index: 20; }
   }
   .site-footer__in > * { width: 100%; }
   .site-footer__legal { line-height: 1.7; }
+}
+
+
+/* Add-on only: small account-currency selector, existing brand unaffected. */
+.currency-choice { margin: 0; padding: 0; border: 0; }
+.currency-choice__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.currency-choice__item { display: flex; align-items: center; gap: 10px; min-width: 0; text-align: left; padding: 14px 12px; border: 1px solid var(--ink-200); border-radius: 13px; background: var(--panel); color: var(--ink-800); transition: border-color .18s, background .18s; }
+.currency-choice__item.is-selected { border-color: var(--brand-500); background: var(--panel-2); }
+.currency-choice__item > strong { font: 700 25px/1 var(--font-display); color: var(--ink-900); }
+.currency-choice__item span { display: grid; gap: 3px; }
+.currency-choice__item b { font-size: 13px; font-weight: 700; }
+.currency-choice__item small { font-size: 11px; color: var(--ink-500); }
+@media (max-width: 400px) { .currency-choice__grid { grid-template-columns: 1fr; } }
+
+
+/* ========================================================================
+   RIDGEFORD / REFINED EUROPEAN IDENTITY · NOVEMBER 2026
+   Additive design layer. Preserves existing mark, scroll sequence, IDs,
+   page animations, core EUR features and signup/admin currency handling.
+   ======================================================================== */
+:root {
+  --font-display: "Manrope", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "DM Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+  --paper: #f1f1ed;
+  --paper-2: #b3b9bf;
+  --dim: #9ca5af;
+  --faint: #818b96;
+  --line: #303841;
+  --steel: #a6b3bd;
+  --steel-lt: #d0d8dc;
+}
+
+/* The problem was not the dark foundation: it was typographic tension.
+   Bank-grade UI favours a steady grotesque, a clear hierarchy and a restrained
+   editorial accent. No exaggerated, hairline 200-weight text. */
+body { font-family: var(--font-sans); letter-spacing: -0.007em; }
+.eyebrow, .mono { font-family: var(--font-mono); }
+.zn__h, .ft__h, .close__h {
+  font-family: var(--font-display);
+  font-weight: 620;
+  letter-spacing: -0.052em;
+  line-height: 1.08;
+}
+.zn__h em, .close__h em {
+  font-family: var(--serif);
+  font-weight: 400;
+  letter-spacing: -0.018em;
+}
+.zn__lede, .ft__b {
+  color: #b9c1c8;
+  line-height: 1.75;
+  font-family: var(--font-sans);
+}
+.zn__head { margin-bottom: clamp(32px, 4.4vw, 58px); }
+.zn { padding-top: clamp(68px, 8vw, 116px); padding-bottom: clamp(68px, 8vw, 116px); }
+
+/* Original pinned frame sequence is deliberately untouched. Only overlays. */
+.hero { color: #f4f5f3; }
+.hero__nav {
+  padding: 22px clamp(20px, 4.5vw, 70px) 17px;
+  border-bottom: 1px solid rgba(255,255,255,.13);
+  background: linear-gradient(180deg, rgba(5,10,16,.30), transparent);
+}
+.hero__nav nav { gap: clamp(14px, 1.7vw, 28px); }
+.hero__nav nav a {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: .015em;
+  text-transform: none;
+  color: rgba(244,246,247,.78);
+}
+.hero__nav nav a:hover { color: #fff; }
+.hero__auth .hbtn { padding: 11px 18px; }
+.hbtn { border-radius: 7px; font-family: var(--font-sans); font-weight: 650; }
+.hbtn--solid {
+  background: #dce2e4;
+  color: #111920;
+  border: 1px solid #dce2e4;
+  box-shadow: none;
+}
+.hbtn--solid:hover { background: #f5f7f7; color: #10171e; filter: none; }
+.hero__position {
+  position: absolute;
+  z-index: 5;
+  top: clamp(76px, 8vw, 92px);
+  left: clamp(20px, 4.5vw, 70px);
+  right: clamp(20px, 4.5vw, 70px);
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: none;
+  text-transform: uppercase;
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: .13em;
+  color: rgba(227,233,237,.66);
+}
+.hero__position-office, .hero__position-currencies { display: flex; align-items: center; gap: 9px; }
+.hero__position i { display: inline-block; height: 3px; width: 3px; border-radius: 50%; background: #cbd6da; opacity: .8; }
+.hero__position b { color: #e9ecef; font-weight: 700; }
+.hero__deck { padding: 46px clamp(20px, 4.5vw, 70px) 8px; }
+.plate { max-width: min(780px, 100%); }
+.plate__eyebrow {
+  gap: 12px;
+  margin-bottom: 24px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .125em;
+  font-weight: 550;
+  color: #c3d1d8;
+}
+.plate__no { color: rgba(244,246,247,.52); }
+.plate__h {
+  font-family: var(--font-display);
+  font-size: clamp(38px, 4.9vw, 74px);
+  line-height: 1.075;
+  letter-spacing: -.062em;
+  font-weight: 670;
+  text-wrap: balance;
+  text-shadow: 0 2px 20px rgba(0,0,0,.2);
+}
+.plate__em {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: -.018em;
+  color: #d4e0e2;
+}
+.plate__lede {
+  max-width: 51ch;
+  margin-top: 22px;
+  font-size: clamp(14px, 1.11vw, 16px);
+  font-weight: 400;
+  line-height: 1.7;
+  color: rgba(231,235,238,.89);
+  text-shadow: 0 1px 12px rgba(0,0,0,.25);
+}
+.plate__actions { margin-top: 28px; gap: 12px; }
+.plate__readout { gap: clamp(20px, 2.3vw, 40px); margin-top: 32px; padding-top: 17px; border-top-color: rgba(242,245,251,.24); }
+.plate__readout dt { font-size: 10px; letter-spacing: .06em; color: rgba(232,237,240,.7); }
+.plate__readout dd { font-family: var(--font-sans); font-size: 12.5px; font-weight: 600; letter-spacing: -.01em; }
+.tp { padding-left: clamp(20px, 4.5vw, 70px); padding-right: clamp(20px, 4.5vw, 70px); padding-bottom: 30px; }
+.tp__seg span { font-family: var(--font-sans); letter-spacing: .055em; font-size: 10px; font-weight: 600; }
+.tp__segs { gap: 22px; }
+.tp__seg { min-width: 84px; }
+.seq__stage::after {
+  background: linear-gradient(90deg, rgba(5,9,14,.70) 0%, rgba(5,9,14,.37) 57%, rgba(5,9,14,.22) 100%), linear-gradient(180deg, rgba(5,9,14,.68) 0%, rgba(5,9,14,.08) 46%, rgba(5,9,14,.75) 100%);
+}
+
+/* Transatlantic desk: European account and news occupy the larger 70% rail. */
+.atlantic {
+  background: #0d1218;
+  border-block: 1px solid #29313a;
+  color: #edf0f0;
+  position: relative;
+  overflow: hidden;
+}
+.atlantic::before {
+  content: "";
+  position: absolute;
+  width: 460px;
+  height: 460px;
+  border: 1px solid rgba(177,191,199,.08);
+  border-radius: 50%;
+  top: -250px;
+  right: -120px;
+  box-shadow: 0 0 0 80px rgba(177,191,199,.015), 0 0 0 160px rgba(177,191,199,.012);
+  pointer-events: none;
+}
+.atlantic__in { max-width: 1400px; margin: 0 auto; padding: clamp(74px, 8.5vw, 124px) clamp(20px, 4vw, 48px); position: relative; }
+.atlantic__header, .atlantic__column-label {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  color: #a2acb5; font-size: 10px; text-transform: uppercase; letter-spacing: .12em; font-family: var(--font-mono);
+}
+.atlantic__header { padding-bottom: 24px; border-bottom: 1px solid #343d47; }
+.atlantic__region { font-size: 9px; color: #c2cbd1; }
+.atlantic__region span { margin: 0 10px; opacity: .4; }
+.atlantic__lead { display: grid; grid-template-columns: minmax(0, 7fr) minmax(260px, 3fr); gap: clamp(36px, 6vw, 96px); padding: clamp(48px, 7vw, 100px) 0 clamp(68px, 8vw, 112px); }
+.atlantic__primary { display: flex; flex-direction: column; align-items: flex-start; }
+.atlantic__eyebrow { font: 500 11px/1.5 var(--font-mono); letter-spacing: .09em; color: #b1c1cb; }
+.atlantic__primary h2 {
+  max-width: 750px; margin: 23px 0 0;
+  font: 650 clamp(42px, 5.4vw, 77px)/1.075 var(--font-display);
+  letter-spacing: -.065em;
+  text-wrap: balance;
+}
+.atlantic__primary h2 em { font-family: var(--serif); font-weight: 400; letter-spacing: -.02em; color: #c7d6da; }
+.atlantic__primary p { max-width: 57ch; margin: 24px 0 0; font-size: 16px; line-height: 1.8; color: #aeb9c1; }
+.atlantic__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; margin-top: 32px; }
+.atlantic__button {
+  display: inline-flex; align-items: center; gap: 25px; padding: 15px 20px;
+  background: #e7eced; color: #101820; border-radius: 7px;
+  font-weight: 700; font-size: 13px; transition: background .2s, transform .2s;
+}
+.atlantic__button:hover { background: white; transform: translateY(-2px); }
+.atlantic__underlink { color: #d4dce1; font-weight: 600; font-size: 13px; padding-bottom: 4px; border-bottom: 1px solid #677583; }
+.atlantic__secondary { border-left: 1px solid #303944; padding-left: clamp(24px, 3vw, 44px); }
+.atlantic__currency { padding: 4px 0 25px; }
+.atlantic__currency + .atlantic__currency { border-top: 1px solid #303944; padding-top: 26px; }
+.atlantic__currency-top { display: flex; justify-content: space-between; align-items: center; font: 500 9.5px/1.6 var(--font-mono); letter-spacing: .08em; color: #b3bec5; }
+.atlantic__currency-top strong { font-size: 9px; color: #dee9eb; border: 1px solid #46535c; border-radius: 3px; padding: 3px 6px; }
+.atlantic__symbol { margin-top: 13px; font: 550 49px/1.1 var(--font-display); letter-spacing: -.06em; color: #eff1f0; }
+.atlantic__currency--usd .atlantic__symbol { font-size: 34px; color: #aebfca; }
+.atlantic__currency h3 { margin: 8px 0 4px; font: 650 17px/1.4 var(--font-display); }
+.atlantic__currency p { margin: 0; color: #a8b3bc; font-size: 12px; line-height: 1.75; }
+.atlantic__editorial { border-top: 1px solid #343d47; }
+.atlantic__editorial-header { display: flex; justify-content: space-between; align-items: end; gap: 25px; padding: 35px 0 26px; }
+.atlantic__kicker { font: 500 10px/1.6 var(--font-mono); color: #a8b8c0; letter-spacing: .13em; }
+.atlantic__editorial-header h3 { margin: 10px 0 0; font: 640 clamp(27px, 3vw, 40px)/1.16 var(--font-display); letter-spacing: -.04em; }
+.atlantic__editorial-header h3 em { font: italic 400 1.1em var(--serif); color: #c7d5da; }
+.atlantic__editorial-disclosure { color: #92a0ab; font-size: 11px; line-height: 1.5; text-align: right; }
+.atlantic__news-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(270px, 3fr); gap: clamp(30px, 5vw, 76px); }
+.atlantic__column-label { min-height: 48px; border-top: 1px solid #47535d; border-bottom: 1px solid #29343d; font-size: 9px; color: #cad3d6; }
+.atlantic__column-label span:last-child { color: #8595a0; }
+.atlantic__story { display: grid; grid-template-columns: 28px minmax(0, 1fr) 14px; gap: 16px; align-items: start; padding: 21px 0 23px; border-bottom: 1px solid #2e3841; transition: border-color .15s; }
+.atlantic__story:hover { border-bottom-color: #899ba7; }
+.atlantic__story-index { color: #93a2ad; font: 500 10px/1.6 var(--font-mono); padding-top: 3px; }
+.atlantic__story-meta { font: 500 9px/1.5 var(--font-mono); letter-spacing: .075em; color: #91a6b2; }
+.atlantic__story h4 { margin: 9px 0 7px; font: 610 19px/1.38 var(--font-display); letter-spacing: -.028em; color: #e6eaeb; }
+.atlantic__story p { margin: 0; max-width: 56ch; color: #a5b1ba; font-size: 12.5px; line-height: 1.75; }
+.atlantic__story-arrow { color: #cad9dc; font-size: 16px; }
+.atlantic__source { display: inline-block; margin-top: 22px; color: #d7e1e3; font-size: 12px; font-weight: 650; border-bottom: 1px solid #697a87; padding-bottom: 5px; }
+
+@media (max-width: 1050px) {
+  .hero__nav nav { gap: 12px; }
+  .hero__nav nav a { font-size: 11px; }
+  .hero__position { font-size: 9px; }
+}
+@media (max-width: 900px) {
+  .atlantic__lead, .atlantic__news-grid { grid-template-columns: 1fr; gap: 34px; }
+  .atlantic__secondary { border-left: none; padding-left: 0; border-top: 1px solid #303944; display: grid; grid-template-columns: 7fr 3fr; gap: 24px; padding-top: 25px; }
+  .atlantic__currency + .atlantic__currency { border-top: 0; border-left: 1px solid #303944; padding-top: 4px; padding-left: 24px; }
+  .atlantic__news-grid { gap: 32px; }
+  .atlantic__editorial-disclosure { display: none; }
+}
+@media (max-width: 680px) {
+  .hero__nav { gap: 8px; padding: 14px 18px; }
+  .hero__auth { gap: 7px; }
+  .hero__auth .hbtn { font-size: 11px; padding: 9px 11px; }
+  .hero__position { top: 76px; left: 20px; right: 20px; display: block; }
+  .hero__position-office { display: none; }
+  .hero__position-currencies { font-size: 9px; }
+  .hero__deck { padding: 82px 20px 34px; align-items: center; }
+  .plate__h { font-size: clamp(37px, 9.8vw, 62px); line-height: 1.09; letter-spacing: -.065em; }
+  .plate__eyebrow { margin-bottom: 16px; font-size: 9px; }
+  .plate__lede { font-size: 14px; line-height: 1.7; margin-top: 18px; }
+  .plate__actions { margin-top: 19px; gap: 8px; }
+  .plate__actions .hbtn { padding: 10px 13px; font-size: 12px; }
+  .plate__readout { margin-top: 21px; gap: 15px; }
+  .plate__readout dt { font-size: 9px; }
+  .plate__readout dd { font-size: 10.5px; }
+  .tp { padding: 0 20px 16px; }
+  .tp__segs { flex: 1; gap: 8px; }
+  .tp__seg { flex: 1; min-width: 0; }
+  .tp__seg span { font-size: 9px; }
+  .hero__cue { display: none; }
+  .atlantic__region { display: none; }
+  .atlantic__lead { padding-top: 44px; padding-bottom: 65px; }
+  .atlantic__primary h2 { font-size: clamp(37px, 10.5vw, 54px); }
+  .atlantic__primary p { font-size: 14.5px; }
+  .atlantic__secondary { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+  .atlantic__currency + .atlantic__currency { padding-left: 14px; }
+  .atlantic__currency-top { flex-wrap: wrap; gap: 5px; }
+  .atlantic__currency h3 { font-size: 14px; }
+  .atlantic__currency p { font-size: 11px; }
+  .atlantic__editorial-header h3 { font-size: 30px; }
+  .atlantic__column-label span:last-child { font-size: 8px; }
+  .atlantic__story { grid-template-columns: 20px minmax(0, 1fr) 12px; gap: 10px; }
+  .atlantic__story h4 { font-size: 17px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .atlantic__button:hover { transform: none; }
 }

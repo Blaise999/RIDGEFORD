@@ -82,6 +82,7 @@ export default async function DashboardLayout({
               © {new Date().getFullYear()} Ridgeford Capital Bank AG · Kaiserstraße 16,
               60311 Frankfurt am Main
             </span>
+            <span className="site-footer__legal">U.S. office: Stamford, Connecticut · USD accounts also available</span>
             <a
               href="mailto:support@ridgefordbank.eu"
               className="hover:text-ink-700 transition whitespace-nowrap"

@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { ok, fail, handleError } from "@/lib/http";
 import { notify } from "@/lib/notify";
 import { fmtMoney } from "@/lib/utils";
+import { accountCurrency } from "@/lib/account-currency";
 
 /**
  * POST /api/spaces/:id
@@ -44,12 +45,13 @@ export async function POST(
 
     const { data: user, error: userErr } = await sb
       .from("users")
-      .select("balance_checking")
+      .select("balance_checking,currency")
       .eq("id", u.id)
       .single();
 
     if (userErr || !user) return fail(500, "Account not found");
 
+    const currency = accountCurrency(user.currency);
     const checking = Number(user.balance_checking);
     const spaceBalance = Number(space.balance);
 
@@ -76,7 +78,7 @@ export async function POST(
         account_type: "checking",
         direction: "debit",
         amount,
-        currency: "EUR",
+        currency,
         rail: "topup",
         category: "Topup",
         counterparty_name: `Space: ${space.name}`,
@@ -90,8 +92,8 @@ export async function POST(
       await notify(
         u.id,
         "info",
-        `Moved ${fmtMoney(amount)} to ${space.name}`,
-        `${space.emoji || "🎯"} Space balance: ${fmtMoney(spaceBalance + amount)}`
+        `Moved ${fmtMoney(amount, currency)} to ${space.name}`,
+        `${space.emoji || "🎯"} Space balance: ${fmtMoney(spaceBalance + amount, currency)}`
       );
 
       return ok({ balance: spaceBalance + amount });
@@ -126,7 +128,7 @@ export async function POST(
       account_type: "checking",
       direction: "credit",
       amount,
-      currency: "EUR",
+      currency,
       rail: "topup",
       category: "Topup",
       counterparty_name: `Space: ${space.name}`,
@@ -140,8 +142,8 @@ export async function POST(
     await notify(
       u.id,
       "info",
-      `Moved ${fmtMoney(amount)} from ${space.name}`,
-      `${space.emoji || "🎯"} Space balance: ${fmtMoney(Math.max(0, spaceBalance - amount))}`
+      `Moved ${fmtMoney(amount, currency)} from ${space.name}`,
+      `${space.emoji || "🎯"} Space balance: ${fmtMoney(Math.max(0, spaceBalance - amount), currency)}`
     );
 
     return ok({ balance: spaceBalance - amount });
@@ -177,7 +179,7 @@ export async function DELETE(
     if (bal > 0) {
       const { data: user, error: userErr } = await sb
         .from("users")
-        .select("balance_checking")
+        .select("balance_checking,currency")
         .eq("id", u.id)
         .single();
 

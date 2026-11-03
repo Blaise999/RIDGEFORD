@@ -8,6 +8,7 @@ import { cx, fmtDate } from "@/lib/utils";
 type App = {
   id: string;
   email: string;
+  currency?: string | null;
   first_name: string | null;
   middle_name: string | null;
   last_name: string | null;
@@ -94,7 +95,7 @@ export default function AdminApplicationsPage() {
             Applications
           </h1>
           <p className="text-[13px] text-ink-400 mt-0.5">
-            Review new account applications. Approving issues a German IBAN and opens the account.
+            Review new account applications. EUR approvals issue an IBAN; USD banking details follow separate provisioning.
           </p>
         </div>
       </div>
@@ -231,7 +232,7 @@ export default function AdminApplicationsPage() {
                   className="inline-flex items-center gap-2 rounded-full h-10 px-5 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-[13.5px] disabled:opacity-50"
                 >
                   {busy === "approve" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                  Approve & issue IBAN
+                  {selected.currency === "USD" ? "Approve USD account" : "Approve & issue IBAN"}
                 </button>
               </div>
             )}

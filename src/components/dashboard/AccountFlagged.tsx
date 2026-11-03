@@ -121,7 +121,7 @@ export function AccountFlagged({
             </div>
 
             <p className="mt-8 text-[12px] text-ink-400 leading-relaxed">
-              Ridgeford Capital Bank AG — Kaiserstraße 16, 60311 Frankfurt am Main. Supervised by BaFin and the Deutsche Bundesbank.
+              Ridgeford Capital Bank · Stamford, Connecticut, USA. Contact support for account verification and applicable service information.
               This message is automated but a real person is reviewing your case.
             </p>
           </div>

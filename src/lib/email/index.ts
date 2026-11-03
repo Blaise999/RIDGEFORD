@@ -122,8 +122,8 @@ export async function sendOtp(
       : "Reset your Ridgeford Capital Bank password";
   return send(to, subject, otpTemplate({ code, purpose, context }));
 }
-export async function sendOnboardingApproved(to: string, firstName: string, iban?: string) {
-  return send(to, "Welcome to Ridgeford Capital Bank — your account is open", onboardingApprovedTemplate({ firstName, iban }));
+export async function sendOnboardingApproved(to: string, firstName: string, iban?: string, currency: "USD" | "EUR" = "EUR") {
+  return send(to, "Welcome to Ridgeford Capital Bank — your account is open", onboardingApprovedTemplate({ firstName, iban, currency }));
 }
 export async function sendOnboardingRejected(to: string, firstName: string, reason?: string) {
   return send(to, "Your Ridgeford Capital Bank application", onboardingRejectedTemplate({ firstName, reason }));

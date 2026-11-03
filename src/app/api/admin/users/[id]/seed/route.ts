@@ -29,11 +29,12 @@ export async function POST(
     const sb = supabaseAdmin();
     const { data: user } = await sb
       .from("users")
-      .select("id,role,balance_checking,balance_savings")
+      .select("id,role,balance_checking,balance_savings,currency")
       .eq("id", id)
       .single();
     if (!user) return fail(404, "User not found");
     if (user.role === "admin") return fail(400, "Refusing to seed into admin account");
+    if (user.currency === "USD") return fail(400, "Automatic fictional transaction seeding is disabled for USD accounts. Import verified bank transactions instead.");
 
     const rows = generateTransactions(id, {
       direction: body?.direction,

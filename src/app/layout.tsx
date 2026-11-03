@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     template: "%s · Ridgeford Capital Bank",
   },
   description:
-    "Ridgeford Capital Bank is the mobile bank built for Europe — real-time SEPA transfers, worldwide SWIFT, Spaces savings with 2,26% interest, and a metal card that works everywhere.",
+    "Ridgeford Capital Bank — headquartered in Frankfurt am Main, with EUR accounts at its core, optional USD accounts and a U.S. office in Stamford, Connecticut.",
   metadataBase: new URL("https://ridgefordbank.eu"),
   applicationName: "Ridgeford Capital Bank",
   icons: {
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Ridgeford Capital Bank — finance at its peak",
     description:
-      "The mobile bank built for Europe. Real-time SEPA, worldwide SWIFT, Spaces savings.",
+      "Euro-first banking from Frankfurt, with optional U.S. dollar accounts and a Connecticut office.",
     type: "website",
     siteName: "Ridgeford Capital Bank",
   },
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Ridgeford Capital Bank — finance at its peak",
     description:
-      "The mobile bank built for Europe. Real-time SEPA, worldwide SWIFT, Spaces savings.",
+      "Euro-first banking from Frankfurt, with optional U.S. dollar accounts and a Connecticut office.",
   },
 };
 

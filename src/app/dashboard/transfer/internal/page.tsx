@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { accountCurrency, type AccountCurrency, currencySymbol } from "@/lib/account-currency";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, Users } from "lucide-react";
 import Link from "next/link";
@@ -11,6 +12,10 @@ export default function InternalPage() {
   const router = useRouter();
   const otp = useTransferOtp();
   const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState<AccountCurrency>("EUR");
+  useEffect(() => { fetch("/api/auth/me").then(r => r.json()).then(d => {
+    if (d?.ok) setCurrency(accountCurrency(d.user?.currency));
+  }).catch(() => {}); }, []);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [reference, setReference] = useState("");
@@ -25,7 +30,7 @@ export default function InternalPage() {
       const okStarted = await otp.begin({
         rail: "internal",
         amount: Number(amount.replace(",", ".")),
-        currency: "EUR",
+        currency,
         beneficiary_name: name || email,
         beneficiary_email: email,
         reference,
@@ -48,7 +53,7 @@ export default function InternalPage() {
         Send to another Ridgeford Capital Bank user
       </h1>
       <p className="text-[13.5px] text-ink-500 mt-1">
-        Instant and free — just enter the recipient's Ridgeford Capital Bank email.
+        {currency === "EUR" ? "Instant and free — just enter the recipient's Ridgeford Capital Bank email." : "Send by email to another USD Ridgeford customer; there is no automatic currency conversion."}
       </p>
 
       <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-500/10 text-brand-700 px-3 py-1.5 text-[12.5px] font-semibold">
@@ -57,7 +62,7 @@ export default function InternalPage() {
 
       <form onSubmit={submit} className="mt-6 card p-6 space-y-4">
         <label className="block">
-          <span className="text-[12.5px] font-semibold text-ink-700">Amount (EUR)</span>
+          <span className="text-[12.5px] font-semibold text-ink-700">Amount ({currency})</span>
           <div className="relative mt-1.5">
             <input
               required
@@ -67,7 +72,7 @@ export default function InternalPage() {
               placeholder="0,00"
               className="w-full h-12 rounded-xl border border-ink-200 bg-panel pl-4 pr-12 text-[18px] font-semibold outline-none focus:border-gold-500"
             />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-400 font-semibold">€</span>
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-400 font-semibold">{currencySymbol(currency)}</span>
           </div>
         </label>
 

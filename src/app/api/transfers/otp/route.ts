@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     const sb = supabaseAdmin();
     const { data: sender } = await sb
       .from("users")
-      .select("email, first_name, blocked")
+      .select("email, first_name, blocked, currency")
       .eq("id", u.id)
       .single();
 
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     const currency =
       typeof body?.currency === "string" && body.currency
         ? String(body.currency).toUpperCase()
-        : "EUR";
+        : sender.currency === "USD" ? "USD" : "EUR";
     const beneficiary =
       typeof body?.beneficiary_name === "string"
         ? body.beneficiary_name.slice(0, 80)

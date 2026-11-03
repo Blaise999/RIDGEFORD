@@ -27,9 +27,11 @@ const COLORS: Record<string, string> = {
 export function CategoryBreakdown({
   txns,
   account = "checking",
+  currency = "EUR",
 }: {
   txns: Txn[];
   account?: "checking" | "savings" | "all";
+  currency?: "EUR" | "USD";
 }) {
   const { items, total } = useMemo(() => {
     const map = new Map<string, number>();
@@ -61,7 +63,7 @@ export function CategoryBreakdown({
           <div key={c.name}>
             <div className="flex items-center justify-between">
               <span className="text-[13px] font-semibold text-ink-900">{c.name}</span>
-              <span className="text-[12.5px] text-ink-500 tabular-nums">{fmtMoney(c.amount)}</span>
+              <span className="text-[12.5px] text-ink-500 tabular-nums">{fmtMoney(c.amount, currency)}</span>
             </div>
             <div className="mt-1.5 h-2 rounded-full bg-ink-100 overflow-hidden">
               <span

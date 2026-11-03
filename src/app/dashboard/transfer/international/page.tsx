@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { accountCurrency, type AccountCurrency } from "@/lib/account-currency";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Globe2, Loader2 } from "lucide-react";
@@ -14,6 +15,10 @@ export default function InternationalPage() {
   const otp = useTransferOtp();
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState("EUR");
+  const [baseCurrency, setBaseCurrency] = useState<AccountCurrency>("EUR");
+  useEffect(() => { fetch("/api/auth/me").then(r => r.json()).then(d => {
+    if (d?.ok) { const c = accountCurrency(d.user?.currency); setBaseCurrency(c); setCurrency(c); }
+  }).catch(() => {}); }, []);
   const [name, setName] = useState("");
   const [iban, setIban] = useState("");
   const [bic, setBic] = useState("");
@@ -59,11 +64,11 @@ export default function InternationalPage() {
         International transfer
       </h1>
       <p className="text-[13.5px] text-ink-500 mt-1">
-        Send money worldwide via SWIFT. Arrives in 1–3 business days.
+        {baseCurrency === "USD" ? "Request an international USD wire using the beneficiary bank SWIFT/BIC and account number." : "Send a SWIFT transfer outside the SEPA area. The recipient needs their IBAN and BIC."}
       </p>
 
       <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-500/10 text-brand-700 px-3 py-1.5 text-[12.5px] font-semibold">
-        <Globe2 className="h-3.5 w-3.5" /> 4,50 € fee · live FX on approval
+        <Globe2 className="h-3.5 w-3.5" /> SWIFT · {baseCurrency} account
       </div>
 
       <form onSubmit={submit} className="mt-6 card p-6 space-y-4">
@@ -86,7 +91,7 @@ export default function InternationalPage() {
               onChange={(e) => setCurrency(e.target.value)}
               className="mt-1.5 h-12 rounded-xl border border-ink-200 bg-panel px-3 text-[15px] font-semibold outline-none focus:border-brand-500"
             >
-              {CURRENCIES.map((c) => (
+              {(baseCurrency === "USD" ? ["USD"] : CURRENCIES).map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
@@ -98,11 +103,11 @@ export default function InternationalPage() {
         </Field>
 
         <div className="grid sm:grid-cols-2 gap-3">
-          <Field label="Beneficiary IBAN / Account number">
-            <input required value={iban} onChange={(e) => setIban(e.target.value.toUpperCase())} placeholder="ES91 2100 0418 45 0200051332" className="input tabular-nums" />
+          <Field label={country.toLowerCase() === "united states" || country.toUpperCase() === "US" ? "Beneficiary U.S. account number" : "Beneficiary IBAN / Account number"}>
+            <input required value={iban} onChange={(e) => setIban(e.target.value.toUpperCase())} placeholder={country.toLowerCase() === "united states" || country.toUpperCase() === "US" ? "Recipient account number" : "IBAN or local account number"} className="input tabular-nums" />
           </Field>
           <Field label="BIC / SWIFT code">
-            <input required value={bic} onChange={(e) => setBic(e.target.value.toUpperCase())} placeholder="CAIXESBBXXX" className="input" />
+            <input required value={bic} onChange={(e) => setBic(e.target.value.toUpperCase())} placeholder="Bank-issued SWIFT/BIC" className="input" />
           </Field>
         </div>
 
@@ -140,20 +145,15 @@ export default function InternationalPage() {
         </div>
 
         <p className="text-[11.5px] text-ink-400 text-center">
-          SWIFT transfers are reviewed by our compliance team before they settle.
+          {baseCurrency === "EUR" ? "SWIFT transfers are reviewed by our compliance team before they settle." : "USD wire submission requires an integrated licensed banking provider for actual settlement."}
         </p>
       </form>
 
       <style jsx>{`
         .input {
-          width: 100%;
-          height: 44px;
-          border-radius: 12px;
-          border: 1px solid #d9dee5;
-          background: #fff;
-          padding: 0 1rem;
-          font-size: 15px;
-          outline: none;
+          width: 100%; height: 44px; border-radius: 12px;
+          border: 1px solid #d9dee5; background: #fff;
+          padding: 0 1rem; font-size: 15px; outline: none;
         }
         .input:focus { border-color: #2f66ff; box-shadow: 0 0 0 1px #2f66ff; }
       `}</style>

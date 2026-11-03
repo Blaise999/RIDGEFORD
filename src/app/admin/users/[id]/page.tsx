@@ -11,6 +11,7 @@ import {
   Sparkles,
   Plus,
 } from "lucide-react";
+import { accountCurrency, accountIdentifier } from "@/lib/account-currency";
 import {
   fmtMoney,
   fmtDate,
@@ -105,7 +106,7 @@ export default function AdminUserDetail({
             {u.email}
           </div>
           <div className="text-[12px] text-ink-400 tabular-nums mt-1">
-            {maskIban(u.iban)}
+            {accountCurrency(u.currency) === "USD" ? accountIdentifier(u) : maskIban(u.iban)} · {accountCurrency(u.currency)}
           </div>
         </div>
 
@@ -161,11 +162,13 @@ export default function AdminUserDetail({
         <BalanceCard
           label="Checking"
           value={Number(u.balance_checking)}
+          currency={accountCurrency(u.currency)}
           onEdit={() => setShowBalance("checking")}
         />
         <BalanceCard
           label="Savings"
           value={Number(u.balance_savings)}
+          currency={accountCurrency(u.currency)}
           onEdit={() => setShowBalance("savings")}
         />
       </div>
@@ -199,7 +202,7 @@ export default function AdminUserDetail({
                     </div>
                   </div>
                   <div className="text-[14px] font-bold text-ink-900 tabular-nums shrink-0">
-                    {fmtMoney(Number(t.amount))}
+                    {fmtMoney(Number(t.amount), accountCurrency(u.currency))}
                   </div>
                 </li>
               ))}
@@ -234,7 +237,7 @@ export default function AdminUserDetail({
                     )}
                   >
                     {t.direction === "credit" ? "+ " : "− "}
-                    {fmtMoney(Number(t.amount))}
+                    {fmtMoney(Number(t.amount), accountCurrency(u.currency))}
                   </div>
                 </li>
               ))}
@@ -250,6 +253,7 @@ export default function AdminUserDetail({
           currentValue={Number(
             showBalance === "savings" ? u.balance_savings : u.balance_checking
           )}
+          currency={accountCurrency(u.currency)}
           onClose={() => setShowBalance(null)}
           onDone={async () => {
             setShowBalance(null);
@@ -261,6 +265,7 @@ export default function AdminUserDetail({
       {showSeed && (
         <SeedModal
           userId={u.id}
+          currency={accountCurrency(u.currency)}
           onClose={() => setShowSeed(false)}
           onDone={async () => {
             setShowSeed(false);
@@ -272,6 +277,7 @@ export default function AdminUserDetail({
       {showInject && (
         <InjectModal
           userId={u.id}
+          currency={accountCurrency(u.currency)}
           onClose={() => setShowInject(false)}
           onDone={async () => {
             setShowInject(false);
@@ -286,10 +292,12 @@ export default function AdminUserDetail({
 function BalanceCard({
   label,
   value,
+  currency,
   onEdit,
 }: {
   label: string;
   value: number;
+  currency: "EUR" | "USD";
   onEdit: () => void;
 }) {
   return (
@@ -299,7 +307,7 @@ function BalanceCard({
           {label}
         </div>
         <div className="mt-1 text-[22px] sm:text-[26px] font-bold text-ink-900 tracking-tight tabular-nums">
-          {fmtMoney(value)}
+          {fmtMoney(value, currency)}
         </div>
       </div>
       <button onClick={onEdit} className="btn btn-ghost h-9 px-3">
@@ -346,12 +354,14 @@ function EditBalanceModal({
   userId,
   account,
   currentValue,
+  currency,
   onClose,
   onDone,
 }: {
   userId: string;
   account: "checking" | "savings";
   currentValue: number;
+  currency: "EUR" | "USD";
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -394,7 +404,7 @@ function EditBalanceModal({
             Current
           </div>
           <div className="text-[22px] font-bold text-ink-900 tabular-nums">
-            {fmtMoney(currentValue)}
+            {fmtMoney(currentValue, currency)}
           </div>
         </div>
 
@@ -415,7 +425,7 @@ function EditBalanceModal({
 
         <label className="block">
           <span className="text-[12.5px] font-semibold text-ink-700">
-            Amount (EUR)
+            Amount ({currency})
           </span>
           <input
             inputMode="decimal"
@@ -463,10 +473,12 @@ function EditBalanceModal({
 
 function SeedModal({
   userId,
+  currency,
   onClose,
   onDone,
 }: {
   userId: string;
+  currency: "USD" | "EUR";
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -538,14 +550,14 @@ function SeedModal({
         </Field>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Min amount (EUR)">
+          <Field label={`Min amount (${currency})`}>
             <input
               value={minAmount}
               onChange={(e) => setMinAmount(e.target.value)}
               inputMode="decimal"
             />
           </Field>
-          <Field label="Max amount (EUR)">
+          <Field label={`Max amount (${currency})`}>
             <input
               value={maxAmount}
               onChange={(e) => setMaxAmount(e.target.value)}
@@ -624,7 +636,7 @@ function SeedModal({
 
         <p className="text-[11px] text-ink-400">
           Tip: you can seed across multiple years. Try <b>from: 3 years ago</b>,{" "}
-          <b>count: 800</b>, <b>range: 5–400 €</b>.
+          <b>count: 800</b>, <b>range: 5–400 {currency}</b>.
         </p>
       </div>
     </Modal>
@@ -633,10 +645,12 @@ function SeedModal({
 
 function InjectModal({
   userId,
+  currency,
   onClose,
   onDone,
 }: {
   userId: string;
+  currency: "USD" | "EUR";
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -699,7 +713,7 @@ function InjectModal({
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Amount (EUR)">
+          <Field label={`Amount (${currency})`}>
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}

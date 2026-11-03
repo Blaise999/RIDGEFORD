@@ -105,7 +105,7 @@ export default function ReceiptPage({ params }: { params: Promise<{ ref: string 
           <div>
             <div className="text-[11.5px] font-semibold uppercase tracking-[0.14em] text-ink-500 mb-2">To</div>
             <Row k="Name" v={t.beneficiary_name || "—"} />
-            {t.beneficiary_iban && <Row k="IBAN" v={t.beneficiary_iban} />}
+            {t.beneficiary_iban && <Row k={t.beneficiary_country?.toUpperCase() === "US" || /^\d+$/.test(t.beneficiary_iban) ? "Account number" : "IBAN"} v={t.beneficiary_iban} />}
             {t.beneficiary_bic && <Row k="BIC / SWIFT" v={t.beneficiary_bic} />}
             {t.beneficiary_country && <Row k="Country" v={t.beneficiary_country} />}
             {t.beneficiary_email && <Row k="Email" v={t.beneficiary_email} />}
@@ -129,7 +129,7 @@ export default function ReceiptPage({ params }: { params: Promise<{ ref: string 
 
         {/* Footer */}
         <div className="mt-10 pt-6 border-t border-ink-100 text-[11.5px] text-ink-400 leading-relaxed">
-          Ridgeford Capital Bank AG · Friedrichstraße 1 · 10117 Berlin, Germany. Supervised by BaFin and the Deutsche Bundesbank.
+          Ridgeford Capital Bank · Stamford, Connecticut, USA. Receipt of an in-app transaction; external settlement requires a banking partner.
           This receipt is an automated confirmation of the transaction above and does not require a signature.
         </div>
       </div>

@@ -70,14 +70,15 @@ export default function SuccessPage() {
                 Amount
               </div>
               <div className="mt-1 text-[36px] font-bold text-ink-900 tabular-nums">
-                {fmtMoney(Number(t.amount))}
+                {fmtMoney(Number(t.amount), t.currency || "EUR")}
               </div>
             </div>
 
             <ul className="mt-6 space-y-2.5">
               <Row k="Reference" v={t.reference_id} />
               <Row k="To" v={t.beneficiary_name} />
-              {t.beneficiary_iban && <Row k="IBAN" v={t.beneficiary_iban} />}
+              {t.beneficiary_iban && <Row k={t.beneficiary_country?.toUpperCase() === "US" || /^\d+$/.test(t.beneficiary_iban) ? "Account number" : "IBAN"} v={t.beneficiary_iban} />}
+              {t.beneficiary_bic && <Row k="SWIFT / BIC" v={t.beneficiary_bic} />}
               <Row k="Rail" v={railLabel(t.rail)} />
               <Row k="Submitted" v={fmtDate(t.created_at)} />
               <Row

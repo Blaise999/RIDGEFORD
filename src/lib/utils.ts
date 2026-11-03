@@ -48,8 +48,8 @@ export function fmtMoney(n: number | string, currency = "EUR", _locale = "de-DE"
   // thousands reads as a decimal point to most of the world, and on a bank
   // balance that ambiguity is not worth the local authenticity.
   const withSep = abs.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  const sym = currency === "EUR" ? "€" : currency;
-  return `${sign}${withSep}\u00A0${sym}`;
+  const sym = currency === "EUR" ? "€" : currency === "USD" ? "$" : currency;
+  return currency === "USD" ? `${sign}${sym}${withSep}` : `${sign}${withSep}\u00A0${sym}`;
 }
 
 /** Plain integer with `.` grouping, no symbol. */

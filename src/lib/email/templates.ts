@@ -194,10 +194,10 @@ function shell({
       <!-- Footer -->
       <tr><td style="padding:24px 32px 28px 32px;border-top:1px solid ${BRAND.ink100};">
         <p style="margin:0 0 6px 0;font-size:12px;line-height:18px;color:${BRAND.ink500};">
-          <strong style="color:${BRAND.ink700};">Ridgeford Capital Bank AG</strong> — Kaiserstraße 16, 60311 Frankfurt am Main, Germany
+          <strong style="color:${BRAND.ink700};">Ridgeford Capital Bank</strong> — Stamford, Connecticut, USA
         </p>
         <p style="margin:0 0 10px 0;font-size:12px;line-height:18px;color:${BRAND.ink500};">
-          Supervised by BaFin and the Deutsche Bundesbank · Deposits protected up to €100,000.
+          Account and payment services depend on the applicable licensed banking partner.
         </p>
         <p style="margin:0;font-size:11.5px;line-height:17px;color:${BRAND.ink400};">
           This is a transactional notification from Ridgeford Capital Bank. If you didn't expect it, please contact <a href="mailto:support@ridgefordbank.eu" style="color:${BRAND.ink500};text-decoration:underline;">support@ridgefordbank.eu</a>.
@@ -453,14 +453,15 @@ export function otpTemplate({
 
 /* -------------------------- ONBOARDING ----------------------------------- */
 
-export function onboardingApprovedTemplate({ firstName, iban }: { firstName: string; iban?: string }) {
+export function onboardingApprovedTemplate({ firstName, iban, currency = "EUR" }: { firstName: string; iban?: string; currency?: "USD" | "EUR" }) {
   return shell({
     accent: { color: BRAND.green, label: "Approved" },
     inner: `
     ${eyebrow("Application approved", BRAND.greenFg)}
     ${h1(`Welcome aboard, ${escape(firstName)}`)}
     ${p("Your Ridgeford Capital Bank application has been reviewed and approved. Your account is now live and ready to use.")}
-    ${iban ? card([["Your German IBAN", iban]]) : ""}
+    ${currency === "EUR" && iban ? card([["Your German IBAN", iban]]) : ""}
+    ${currency === "USD" ? p("Your U.S. dollar account is approved. Account numbers, ABA routing and SWIFT/BIC details will be shown after issuance by our banking provider. Do not use unassigned details to receive transfers.") : ""}
     ${p("You can now sign in, receive money, send SEPA / SEPA Instant / SWIFT transfers, and organise your balance into Spaces. On first sign-in we'll ask for a one-time code — that's normal, it keeps your account safe.")}
     <p style="margin:6px 0 0 0;">${badge("Account open", BRAND.greenBg, BRAND.greenFg)}</p>
     `,
@@ -567,7 +568,7 @@ export function receiptTemplate(p_: ReceiptPayload) {
     ${card(benRows)}
 
     <p style="margin:6px 0 0 0;">${badge("Settled", BRAND.greenBg, BRAND.greenFg)}</p>
-    ${muted(`Receipt number ${escape(p_.reference)}. Ridgeford Capital Bank AG, Kaiserstraße 16, 60311 Frankfurt am Main — supervised by BaFin and the Deutsche Bundesbank. This receipt was generated automatically and is valid without a signature.`)}
+    ${muted(`Receipt number ${escape(p_.reference)}. Ridgeford Capital Bank, Stamford, Connecticut, USA. External settlement requires the relevant licensed payment provider. This receipt was generated automatically and is valid without a signature.`)}
     `,
     preheader: `Receipt ${p_.reference} — ${fmt(p_.amount, p_.currency)} to ${p_.beneficiaryName}.`,
   });

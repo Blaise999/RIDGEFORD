@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     let q = sb
       .from("users")
       .select(
-        "id,email,first_name,middle_name,last_name,date_of_birth,place_of_birth,nationality,phone,street,street_number,postal_code,city,country,employment_status,employer,occupation,monthly_income,source_of_funds,tax_id,id_document_type,id_document_number,onboarding_status,rejection_reason,reviewed_at,created_at"
+        "id,email,currency,first_name,middle_name,last_name,date_of_birth,place_of_birth,nationality,phone,street,street_number,postal_code,city,country,employment_status,employer,occupation,monthly_income,source_of_funds,tax_id,id_document_type,id_document_number,onboarding_status,rejection_reason,reviewed_at,created_at"
       )
       .neq("role", "admin")
       .order("created_at", { ascending: false })

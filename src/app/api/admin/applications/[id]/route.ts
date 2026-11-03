@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { ok, fail, handleError } from "@/lib/http";
 import { generateIban } from "@/lib/utils";
+import { accountCurrency } from "@/lib/account-currency";
 import { sendOnboardingApproved, sendOnboardingRejected, deferEmail } from "@/lib/email";
 import { notify } from "@/lib/notify";
 
@@ -54,7 +55,7 @@ export async function POST(
 
     const { data: user, error: userError } = await sb
       .from("users")
-      .select("id,email,first_name,onboarding_status,role,iban")
+      .select("id,email,first_name,onboarding_status,role,iban,currency")
       .eq("id", id)
       .single();
 
@@ -68,7 +69,16 @@ export async function POST(
     const now = new Date().toISOString();
 
     if (action === "approve") {
+      const currency = accountCurrency(user.currency);
       let iban = user.iban;
+      if (currency === "USD") {
+        const { error: updErr } = await sb.from("users").update({
+          iban: null, bic: null, email_verified: true, onboarding_status: "APPROVED",
+          reviewed_at: now, reviewed_by: admin.id, rejection_reason: null,
+        }).eq("id", id);
+        if (updErr) return fail(500, updErr.message);
+        iban = null;
+      } else {
 
       if (!iban) {
         for (let i = 0; i < 3 && !iban; i++) {
@@ -105,6 +115,8 @@ export async function POST(
           .eq("id", id);
       }
 
+      }
+
       await sb.from("admin_actions").insert({
         admin_id: admin.id,
         action: "approve_application",
@@ -115,10 +127,10 @@ export async function POST(
       // Email goes out — but intentionally NO bell notification on account
       // opening. The welcome belongs in the inbox, not in the activity feed.
       deferEmail(() =>
-        sendOnboardingApproved(user.email, user.first_name || "there", iban)
+        sendOnboardingApproved(user.email, user.first_name || "there", iban || undefined, currency)
       );
 
-      return ok({ status: "APPROVED", iban });
+      return ok({ status: "APPROVED", iban, currency });
     }
 
     await sb

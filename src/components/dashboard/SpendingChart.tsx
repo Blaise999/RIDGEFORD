@@ -14,12 +14,14 @@ export function SpendingChart({
   txns,
   days = 30,
   account = "checking",
-  accent = "#2f66ff",
+  accent = "#8a9bab",
+  currency = "EUR",
 }: {
   txns: Txn[];
   days?: number;
   account?: "checking" | "savings" | "all";
   accent?: string;
+  currency?: "EUR" | "USD";
 }) {
   const points = useMemo(() => bucketByDay(txns, days, account), [txns, days, account]);
   const max = Math.max(1, ...points.map((p) => p.v));
@@ -40,7 +42,7 @@ export function SpendingChart({
               onFocus={() => setHover(i)}
               onBlur={() => setHover(null)}
               className="flex-1 min-w-[4px] relative outline-none"
-              aria-label={`${p.label}: ${p.v.toFixed(2)} euros spent`}
+              aria-label={`${p.label}: ${fmtMoney(p.v, currency)} spent`}
             >
               <span
                 className="block rounded-t-md transition-all duration-150"
@@ -56,7 +58,7 @@ export function SpendingChart({
                   className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-night-900 text-white text-[11px] font-semibold px-2 py-1 shadow-pop"
                   style={{ zIndex: 2 }}
                 >
-                  {fmtMoney(p.v)} · {p.label}
+                  {fmtMoney(p.v, currency)} · {p.label}
                 </span>
               )}
             </button>

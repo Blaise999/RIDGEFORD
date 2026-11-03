@@ -13,6 +13,8 @@ type U = {
   blocked: boolean;
   blocked_reason: string | null;
   iban: string | null;
+  currency: "EUR" | "USD";
+  account_number: string | null;
   balance_checking: number | string;
   balance_savings: number | string;
   created_at: string;
@@ -64,7 +66,7 @@ export default function AdminUsersPage() {
         <div>
           <h1 className="text-[28px] font-bold tracking-tight text-ink-900">Users</h1>
           <p className="text-[13.5px] text-ink-500 mt-1">
-            Everyone with a Ridgeford Capital Bank account. Block / unblock and see their activity.
+            USD and EUR customer accounts. Review activity and account status.
           </p>
         </div>
 
@@ -108,6 +110,7 @@ export default function AdminUsersPage() {
               <tr>
                 <th className="px-5 py-3">Name</th>
                 <th className="px-5 py-3">Email</th>
+                <th className="px-5 py-3">Account</th>
                 <th className="px-5 py-3">Balance</th>
                 <th className="px-5 py-3">Joined</th>
                 <th className="px-5 py-3">Status</th>
@@ -138,8 +141,9 @@ export default function AdminUsersPage() {
                       </div>
                     </td>
                     <td className="px-5 py-3 text-[13.5px] text-ink-700">{u.email}</td>
+                    <td className="px-5 py-3"><span className="rounded-md bg-white/10 px-2 py-1 text-[11px] font-bold">{u.currency === "USD" ? "$ USD" : "€ EUR"}</span></td>
                     <td className="px-5 py-3 text-[13.5px] font-semibold text-ink-900 tabular-nums">
-                      {fmtMoney(Number(u.balance_checking) + Number(u.balance_savings))}
+                      {fmtMoney(Number(u.balance_checking) + Number(u.balance_savings), u.currency === "USD" ? "USD" : "EUR")}
                     </td>
                     <td className="px-5 py-3 text-[13px] text-ink-500">{fmtDate(u.created_at)}</td>
                     <td className="px-5 py-3">

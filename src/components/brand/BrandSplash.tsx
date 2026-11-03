@@ -19,12 +19,12 @@ import { Logo } from "@/components/brand/Logo";
  *     the site.
  *  3. `prefers-reduced-motion` skips it entirely.
  *
- * Total: ~3.8s. The mark settles, the rule draws, the tagline arrives, then
- * it lifts — enough time to actually read it.
+ * Total: ~2.1s. Kept the original mark/rule/tagline choreography,
+ * but removed the extra pause that made first visits feel slow.
  */
 export function BrandSplash({
-  hold = 2900,
-  fade = 900,
+  hold = 1600,
+  fade = 500,
 }: {
   hold?: number;
   fade?: number;

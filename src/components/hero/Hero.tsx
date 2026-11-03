@@ -62,56 +62,67 @@ interface Plate {
 const DECK: Plate[] = [
   {
     index: "01",
-    eyebrow: "The euro",
-    head: [{ text: "One currency." }, { text: "Twenty-one" }, { text: "countries", em: true }],
+    eyebrow: "Frankfurt · European banking",
+    head: [
+      { text: "Built in Frankfurt." },
+      { text: "Made for how" },
+      { text: "money moves.", em: true },
+    ],
     lede:
-      "Ridgeford holds euro accounts across the whole single-currency area — twenty-one members since Bulgaria joined on 1 January 2026. One IBAN, one supervisor, one deposit-protection scheme, and the same price whether the money goes to the next street or to Nicosia.",
+      "Your financial world should feel considered, not complicated. Ridgeford puts euro banking first, with a dedicated U.S. dollar option for people whose money moves across borders.",
     ledeShort:
-      "Euro accounts across all twenty-one members of the single-currency area. One IBAN, one price, wherever it goes.",
+      "Euro-first banking from Frankfurt, with a dedicated U.S. dollar account option when you need it.",
     actions: [
-      { label: "Open an account", href: "/signup", solid: true },
-      { label: "See the rails", href: "#rails" },
+      { label: "Explore accounts", href: "/signup", solid: true },
+      { label: "Our approach", href: "#rails" },
     ],
     readout: [
-      ["Euro area", "21 countries · EA21"],
-      ["Licence", "Germany · BaFin supervised"],
-      ["Protection", "100.000 € per depositor"],
+      ["Head office", "Frankfurt am Main"],
+      ["Primary currency", "EUR · €"],
+      ["Also available", "USD · $"],
     ],
   },
   {
     index: "02",
-    eyebrow: "Rails",
-    head: [{ text: "Ten seconds." }, { text: "Any hour." }, { text: "No surcharge", em: true }],
+    eyebrow: "01 / The euro experience",
+    head: [
+      { text: "Europe, without" },
+      { text: "the friction.", em: true },
+    ],
     lede:
-      "Regulation (EU) 2024/886 has obliged every euro-area bank to send instant transfers since 9 October 2025, to price them no higher than a standard transfer, and to check the payee's name against the IBAN before you authorise. We do all three because it is the law, not because it is a feature.",
+      "Move euros across the SEPA area, keep your spending organised and find the details that matter in one clear place. A European banking experience designed around your day, not the other way round.",
     ledeShort:
-      "Instant euro transfers in under ten seconds, 24/7, at no extra cost — and a free name check before every one.",
+      "SEPA payments, clear account details and a focused euro banking experience — without the noise.",
     actions: [
-      { label: "How a transfer works", href: "#rails", solid: true },
-      { label: "What it costs", href: "#ledger" },
+      { label: "Explore euro banking", href: "#rails", solid: true },
+      { label: "European markets", href: "#tape" },
     ],
     readout: [
-      ["Settlement", "Under 10 s · TIPS"],
-      ["Availability", "24 / 7 / 365"],
-      ["Name check", "Free · every transfer"],
+      ["Currency", "EUR"],
+      ["Payment network", "SEPA"],
+      ["Banking perspective", "Europe first"],
     ],
   },
   {
     index: "03",
-    eyebrow: "Frankfurt",
-    head: [{ text: "Kaiserstraße 16." }, { text: "Six hundred metres" }, { text: "from the ECB", em: true }],
+    eyebrow: "02 / The U.S. connection",
+    head: [
+      { text: "Frankfurt at heart." },
+      { text: "Connected across" },
+      { text: "the Atlantic.", em: true },
+    ],
     lede:
-      "We sit in the Bahnhofsviertel, on the street that runs from the Hauptbahnhof into the Innenstadt — a short walk from the Eurotower, where the European Central Bank supervises banks like this one, and from the Börsenplatz. Proximity to the supervisor is not a boast. It is simply where this business is done.",
+      "Our European home remains the centre of Ridgeford. For dollar-led finances, there is an additional USD account option and a U.S. presence in Stamford, Connecticut. One brand, with room to move.",
     ledeShort:
-      "Kaiserstraße 16, Bahnhofsviertel — a short walk from the Eurotower and the Börsenplatz.",
+      "Frankfurt is home. USD accounts add a U.S. dimension, with a Connecticut office presence.",
     actions: [
-      { label: "Open an account", href: "/signup", solid: true },
-      { label: "Find the house", href: "#house" },
+      { label: "Explore USD accounts", href: "#usd-desk", solid: true },
+      { label: "Open an account", href: "/signup" },
     ],
     readout: [
-      ["Registered", "Frankfurt am Main"],
-      ["BIC", "RDGFDEFFXXX"],
-      ["Supervisor", "BaFin · Bundesbank"],
+      ["Headquarters", "Frankfurt, Germany"],
+      ["U.S. office", "Stamford, Connecticut"],
+      ["Account options", "EUR · USD"],
     ],
   },
 ];
@@ -149,8 +160,8 @@ export default function Hero() {
 
           <nav aria-label="Primary">
             <a href="#rails">Rails</a>
-            <a href="#tape">Europe</a>
-            <a href="#coverage">Coverage</a>
+            <a href="#tape">European markets</a>
+            <a href="#usd-desk">USD desk</a>
             <a href="#house">Frankfurt</a>
             <a href="#ledger">Pricing</a>
           </nav>
@@ -164,6 +175,11 @@ export default function Hero() {
             </Link>
           </div>
         </header>
+
+        <div className="hero__position mono" aria-label="Ridgeford offices and currency options">
+          <span className="hero__position-office">FRANKFURT <i aria-hidden="true" /> STAMFORD, CT</span>
+          <span className="hero__position-currencies"><b>EUR</b> PRIMARY <i aria-hidden="true" /> <b>USD</b> AVAILABLE</span>
+        </div>
 
         {/* ---------------- aperture blades ---------------- */}
         <div className="ap" aria-hidden="true">

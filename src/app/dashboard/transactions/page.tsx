@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowDownLeft, ArrowUpRight, Filter, Search, Loader2 } from "lucide-react";
 import { fmtMoney, fmtRelativeDate, cx } from "@/lib/utils";
+import { accountCurrency, type AccountCurrency } from "@/lib/account-currency";
 
 type Txn = {
   id: string;
@@ -28,6 +29,8 @@ const TABS = [
 ];
 
 export default function TransactionsPage() {
+  const [currency, setCurrency] = useState<AccountCurrency>("EUR");
+  useEffect(() => { fetch("/api/auth/me").then(r => r.json()).then(d => { if(d?.ok) setCurrency(accountCurrency(d.user?.currency)); }).catch(() => {}); }, []);
   const [tab, setTab] = useState<"all" | "sent" | "received">("all");
   const [txns, setTxns] = useState<Txn[] | null>(null);
   const [q, setQ] = useState("");
@@ -87,14 +90,14 @@ export default function TransactionsPage() {
         <div className="card p-5">
           <div className="text-[11.5px] font-semibold uppercase tracking-[0.14em] text-ink-500">Received</div>
           <div className="mt-1 text-[28px] font-bold text-brand-600 tracking-tight">
-            + {fmtMoney(totalIn)}
+            + {fmtMoney(totalIn, currency)}
           </div>
           <div className="text-[12px] text-ink-400 mt-0.5">{(txns || []).filter((t) => t.direction === "credit").length} transactions</div>
         </div>
         <div className="card p-5">
           <div className="text-[11.5px] font-semibold uppercase tracking-[0.14em] text-ink-500">Sent</div>
           <div className="mt-1 text-[28px] font-bold text-ink-900 tracking-tight">
-            − {fmtMoney(totalOut)}
+            − {fmtMoney(totalOut, currency)}
           </div>
           <div className="text-[12px] text-ink-400 mt-0.5">{(txns || []).filter((t) => t.direction === "debit").length} transactions</div>
         </div>

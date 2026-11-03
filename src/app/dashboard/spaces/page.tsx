@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, Plus, Target, Lock, Trash2, ArrowDownLeft, ArrowUpRight, X } from "lucide-react";
+import { accountCurrency, type AccountCurrency } from "@/lib/account-currency";
 import { fmtMoney, cx } from "@/lib/utils";
 
 type Space = {
@@ -18,6 +19,7 @@ type Space = {
 export default function SpacesPage() {
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currency, setCurrency] = useState<AccountCurrency>("EUR");
   const [showCreate, setShowCreate] = useState(false);
   const [move, setMove] = useState<{ space: Space; action: "deposit" | "withdraw" } | null>(null);
 
@@ -32,6 +34,7 @@ export default function SpacesPage() {
     }
   }
 
+  useEffect(() => { fetch("/api/auth/me").then(r => r.json()).then(d => { if(d?.ok) setCurrency(accountCurrency(d.user?.currency)); }).catch(() => {}); }, []);
   useEffect(() => { load(); }, []);
 
   async function del(id: string) {
@@ -97,9 +100,9 @@ export default function SpacesPage() {
                 </div>
                 <div className="mt-2 text-[16px] font-semibold text-ink-900">{s.name}</div>
                 <div className="mt-3">
-                  <div className="text-[22px] font-bold text-ink-900 tabular-nums">{fmtMoney(bal)}</div>
+                  <div className="text-[22px] font-bold text-ink-900 tabular-nums">{fmtMoney(bal, currency)}</div>
                   {goal > 0 && (
-                    <div className="text-[12px] text-ink-400">of {fmtMoney(goal)} goal</div>
+                    <div className="text-[12px] text-ink-400">of {fmtMoney(goal, currency)} goal</div>
                   )}
                 </div>
                 {goal > 0 && (
@@ -109,13 +112,13 @@ export default function SpacesPage() {
                 )}
                 {s.target_date && (
                   <div className="mt-2 text-[11.5px] text-ink-500">
-                    Target {new Date(s.target_date).toLocaleDateString("de-DE")}
+                    Target {new Date(s.target_date).toLocaleDateString(currency === "USD" ? "en-US" : "de-DE")}
                   </div>
                 )}
                 {s.locked_until && (
                   <div className="text-[11.5px] text-amber-300">
                     {locked ? "Locked until " : "Was locked until "}
-                    {new Date(s.locked_until).toLocaleDateString("de-DE")}
+                    {new Date(s.locked_until).toLocaleDateString(currency === "USD" ? "en-US" : "de-DE")}
                   </div>
                 )}
                 <div className="mt-4 flex gap-2">
@@ -139,9 +142,9 @@ export default function SpacesPage() {
         </div>
       )}
 
-      {showCreate && <CreateModal onClose={() => setShowCreate(false)} onDone={async () => { setShowCreate(false); await load(); }} />}
+      {showCreate && <CreateModal currency={currency} onClose={() => setShowCreate(false)} onDone={async () => { setShowCreate(false); await load(); }} />}
       {move && (
-        <MoveModal
+        <MoveModal currency={currency}
           space={move.space}
           action={move.action}
           onClose={() => setMove(null)}
@@ -168,7 +171,7 @@ function Modal({ title, children, onClose }: { title: string; children: React.Re
   );
 }
 
-function CreateModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
+function CreateModal({ currency, onClose, onDone }: { currency: AccountCurrency; onClose: () => void; onDone: () => void }) {
   const [name, setName] = useState("");
   const [emoji, setEmoji] = useState("🎯");
   const [goal, setGoal] = useState("");
@@ -213,7 +216,7 @@ function CreateModal({ onClose, onDone }: { onClose: () => void; onDone: () => v
           </label>
         </div>
         <label className="block">
-          <span className="text-[12.5px] font-semibold text-ink-700">Goal amount (€) — optional</span>
+          <span className="text-[12.5px] font-semibold text-ink-700">Goal amount ({currency}) — optional</span>
           <input value={goal} onChange={(e) => setGoal(e.target.value)} inputMode="decimal" placeholder="3.000" className="mt-1.5 h-11 w-full rounded-xl border border-ink-200 bg-panel px-3 text-[15px] outline-none focus:border-brand-500" />
         </label>
         <div className="grid grid-cols-2 gap-3">
@@ -240,7 +243,7 @@ function CreateModal({ onClose, onDone }: { onClose: () => void; onDone: () => v
   );
 }
 
-function MoveModal({ space, action, onClose, onDone }: { space: Space; action: "deposit" | "withdraw"; onClose: () => void; onDone: () => void }) {
+function MoveModal({ currency, space, action, onClose, onDone }: { currency: AccountCurrency; space: Space; action: "deposit" | "withdraw"; onClose: () => void; onDone: () => void }) {
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -263,7 +266,7 @@ function MoveModal({ space, action, onClose, onDone }: { space: Space; action: "
     <Modal title={`${action === "deposit" ? "Add to" : "Withdraw from"} ${space.name}`} onClose={onClose}>
       <div className="space-y-3">
         <label className="block">
-          <span className="text-[12.5px] font-semibold text-ink-700">Amount (€)</span>
+          <span className="text-[12.5px] font-semibold text-ink-700">Amount ({currency})</span>
           <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" placeholder="0" className="mt-1.5 h-12 w-full rounded-xl border border-ink-200 bg-panel px-3 text-[18px] font-semibold outline-none focus:border-brand-500 tabular-nums" />
         </label>
         {err && <div className="rounded-xl border border-red-500/30 bg-red-500/10 text-red-300 text-[13px] p-3">{err}</div>}

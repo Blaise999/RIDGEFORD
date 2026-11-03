@@ -62,6 +62,7 @@ create table if not exists public.users (
   -- Banking
   iban               text unique,
   account_number     text,
+  routing_number     text,
   bic                text default 'RDGFDEFFXXX',
   card_last4         text,
 

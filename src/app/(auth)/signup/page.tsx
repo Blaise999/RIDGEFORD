@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { COUNTRIES } from "@/lib/kyc";
+import { type AccountCurrency } from "@/lib/account-currency";
 import { ArrowRight, Check, Eye, EyeOff, Loader2 } from "lucide-react";
 
 /**
@@ -23,6 +24,7 @@ export default function SignupPage() {
     phone: "",
     password: "",
     residence_country: "DE",
+    currency: "EUR" as AccountCurrency,
     consent_terms: false,
     consent_privacy: false,
     consent_marketing: false,
@@ -62,9 +64,23 @@ export default function SignupPage() {
     <AuthShell
       eyebrow="Account opening · Step 1 of 2"
       headline="Open a Ridgeford account."
-      sub="This takes a minute. Next you'll complete identity verification, which European law requires before we can open an account for you."
+      sub={f.currency === "EUR" ? "This takes a minute. Next you'll complete identity verification, which European law requires before we can open an account for you." : "Open an optional U.S. dollar account. Identity verification comes next; U.S. bank details are assigned only after bank provisioning."}
     >
       <form onSubmit={submit} className="space-y-5">
+        <fieldset className="currency-choice">
+          <legend className="label mb-2">Choose your account currency</legend>
+          <div className="currency-choice__grid">
+            {(["EUR", "USD"] as const).map((currency) => (
+              <button key={currency} type="button" onClick={() => setF((v) => ({ ...v, currency }))}
+                aria-pressed={f.currency === currency} className={`currency-choice__item ${f.currency === currency ? "is-selected" : ""}`}>
+                <strong>{currency === "USD" ? "$" : "€"}</strong>
+                <span><b>{currency} account</b><small>{currency === "USD" ? "United States · USD" : "Europe · EUR"}</small></span>
+                {f.currency === currency && <Check className="h-4 w-4 ml-auto" />}
+              </button>
+            ))}
+          </div>
+          <p className="hint mt-2">USD uses U.S. account/routing details and SWIFT for international wires; EUR uses IBAN and SEPA. No payment details are issued by this form.</p>
+        </fieldset>
         {err && (
           <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-[13.5px] text-red-300">
             {err}
@@ -114,7 +130,7 @@ export default function SignupPage() {
               className="field"
               value={f.phone}
               onChange={(e) => set("phone", e.target.value)}
-              placeholder="+49 151 23456789"
+              placeholder={f.currency === "USD" ? "+1 (713) 555-0100" : "+49 151 23456789"}
             />
             <p className="hint">Used for payment authorisation.</p>
           </div>

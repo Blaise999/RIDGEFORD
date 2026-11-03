@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Camera, Check, Loader2, User } from "lucide-react";
 import { cx } from "@/lib/utils";
+import { accountCurrency } from "@/lib/account-currency";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -185,8 +186,16 @@ export default function SettingsPage() {
       <div className="card p-6">
         <h2 className="text-[15px] font-semibold text-ink-900">Account</h2>
         <div className="mt-3 space-y-2 text-[13.5px]">
-          <KV k="IBAN" v={me.iban || "—"} />
-          <KV k="BIC" v={me.bic || "—"} />
+          <KV k="Account currency" v={accountCurrency(me.currency)} />
+          {accountCurrency(me.currency) === "USD" ? <>
+            <KV k="U.S. account number" v={me.account_number || "Awaiting bank provisioning"} />
+            <KV k="ABA routing number" v={me.routing_number || "Not assigned"} />
+            <KV k="SWIFT / BIC" v={me.bic || "Not assigned"} />
+            <p className="text-[11px] text-ink-400 mt-2">Use only bank-issued details to receive ACH or wire transfers. SWIFT is the bank identifier for international payments, not a replacement for your account number.</p>
+          </> : <>
+            <KV k="IBAN" v={me.iban || "Pending approval"} />
+            <KV k="BIC / SWIFT" v={me.bic || "Not assigned"} />
+          </>}
           <KV k="Card" v={me.card_last4 ? `•••• ${me.card_last4}` : "—"} />
         </div>
       </div>

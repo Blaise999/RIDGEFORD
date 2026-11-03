@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { ok, fail, handleError } from "@/lib/http";
 import { genReference, fmtMoney } from "@/lib/utils";
 import { verifyIban, comparePayeeName, normalizeIban } from "@/lib/iban";
+import { accountCurrency, validSwift } from "@/lib/account-currency";
 import { sendTransferSubmitted, deferEmail } from "@/lib/email";
 import { verifyOtp } from "@/lib/otp";
 import { notify } from "@/lib/notify";
@@ -89,19 +90,23 @@ export async function POST(req: NextRequest) {
     const sb = supabaseAdmin();
     const { data: sender } = await sb
       .from("users")
-      .select("id, email, first_name, balance_checking, balance_savings, blocked")
+      .select("id, email, first_name, currency, balance_checking, balance_savings, blocked")
       .eq("id", u.id)
       .single();
     if (!sender) return fail(500, "Account not found");
     if (sender.blocked) return fail(403, "Account suspended");
 
+    const baseCurrency = accountCurrency(sender.currency);
+    if (baseCurrency === "USD" && rail !== "internal" && rail !== "swift") return fail(400, "SEPA is available only on EUR accounts");
+    // USD balances must never be silently used as euros or converted without a quote.
+    if (baseCurrency === "USD" && String(currency || "USD").toUpperCase() !== "USD") return fail(400, "Only USD transfers are enabled for dollar accounts");
     const balance = accType === "savings" ? Number(sender.balance_savings) : Number(sender.balance_checking);
 
     // For SWIFT in a non-EUR currency, convert to EUR via live FX.
     // Balance check, ledger debit, and fee are all in EUR since the Ridgeford account is EUR.
     let amtInEur = amt;
     let fxRate: number | null = null;
-    if (rail === "swift" && currency && String(currency).toUpperCase() !== "EUR") {
+    if (baseCurrency === "EUR" && rail === "swift" && currency && String(currency).toUpperCase() !== "EUR") {
       const { convertToEur, fxRateEurTo } = await import("@/lib/fx");
       amtInEur = await convertToEur(amt, String(currency));
       fxRate = await fxRateEurTo(String(currency)); // 1 EUR = fxRate <currency>
@@ -114,16 +119,17 @@ export async function POST(req: NextRequest) {
       if (!beneficiary_email) return fail(400, "Recipient email required");
       const { data: rec } = await sb
         .from("users")
-        .select("id, blocked")
+        .select("id, blocked, currency")
         .ilike("email", beneficiary_email)
         .maybeSingle();
       if (!rec) return fail(404, "No Ridgeford Capital Bank user found with that email");
       if (rec.id === u.id) return fail(400, "You can't send money to yourself");
       if (rec.blocked) return fail(400, "Recipient account is not active");
+      if (accountCurrency(rec.currency) !== baseCurrency) return fail(400, "Internal transfers between USD and EUR accounts require an FX facility. Choose a recipient with the same account currency.");
       beneficiary_user_id = rec.id;
     } else if (rail === "swift") {
-      if (!beneficiary_iban) return fail(400, "Beneficiary IBAN required");
-      if (!beneficiary_bic) return fail(400, "Beneficiary BIC / SWIFT code required");
+      if (!beneficiary_iban) return fail(400, "Beneficiary account number or IBAN required");
+      if (!beneficiary_bic || !validSwift(String(beneficiary_bic).toUpperCase())) return fail(400, "A valid beneficiary SWIFT / BIC code is required");
       if (!beneficiary_country) return fail(400, "Beneficiary country required");
     } else {
       // ── SEPA, anywhere in the euro area ────────────────────────────────
@@ -179,7 +185,7 @@ export async function POST(req: NextRequest) {
         direction: "debit",
         account_type: accType,
         amount: amt,
-        currency: currency || "EUR",
+        currency: baseCurrency === "USD" ? "USD" : currency || "EUR",
         fee,
         beneficiary_name,
         beneficiary_iban: normalizedIban || beneficiary_iban || null,
@@ -206,15 +212,15 @@ export async function POST(req: NextRequest) {
       transfer_id: transfer.id,
       account_type: accType,
       direction: "debit",
-      amount: amtInEur, // EUR — matches what we'll debit on approval
-      currency: "EUR",
+      amount: amtInEur, // Account currency — matches what approval will debit
+      currency: baseCurrency,
       rail,
       category: "Transfer",
       counterparty_name: beneficiary_name,
       counterparty_iban: normalizedIban || beneficiary_iban || null,
       counterparty_email: beneficiary_email || null,
       description:
-        fxRate && currency !== "EUR"
+        fxRate && baseCurrency === "EUR" && currency !== "EUR"
           ? `${amt.toFixed(2)} ${currency} @ ${fxRate.toFixed(4)} → EUR · ${reference || memo || "Transfer out"}`
           : reference || memo || "Transfer out",
       merchant: beneficiary_name,

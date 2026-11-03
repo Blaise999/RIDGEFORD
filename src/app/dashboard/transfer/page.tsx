@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { fmtMoney, maskIban } from "@/lib/utils";
+import { accountCurrency, accountIdentifier } from "@/lib/account-currency";
 
 export const dynamic = "force-dynamic";
 
@@ -48,10 +49,11 @@ export default async function TransferPicker() {
   const sb = supabaseAdmin();
   const { data: user } = await sb
     .from("users")
-    .select("balance_checking, balance_savings, iban, blocked")
+    .select("balance_checking, balance_savings, iban, account_number, currency, blocked")
     .eq("id", u.id)
     .single();
 
+  const cur = accountCurrency(user?.currency);
   return (
     <div className="pt-6 max-w-3xl mx-auto">
       <h1 className="dash-h1 text-[28px] text-ink-900">Send money</h1>
@@ -65,14 +67,15 @@ export default async function TransferPicker() {
             Available balance
           </div>
           <div className="mt-0.5 text-[26px] font-bold text-ink-900 tabular-nums">
-            {fmtMoney(Number(user?.balance_checking || 0) + Number(user?.balance_savings || 0))}
+            {fmtMoney(Number(user?.balance_checking || 0) + Number(user?.balance_savings || 0), cur)}
           </div>
-          <div className="text-[11.5px] text-ink-400 tabular-nums">{maskIban(user?.iban || "")}</div>
+          <div className="text-[11.5px] text-ink-400 tabular-nums">{cur === "USD" ? accountIdentifier({ currency: cur, account_number: user?.account_number }) : maskIban(user?.iban || "")}</div>
         </div>
       </div>
 
+      {cur === "USD" && <p className="mt-5 text-[12px] text-ink-500">USD accounts use U.S. account and ABA routing details for domestic wires, or SWIFT/BIC for international transfers. Domestic ACH/Fedwire connectivity requires a banking partner and is not enabled in this build.</p>}
       <div className="mt-6 space-y-3">
-        {RAILS.map((r) => (
+        {RAILS.filter((r) => cur === "EUR" || !r.id.startsWith("sepa")).map((r) => (
           <Link
             key={r.id}
             href={r.href}

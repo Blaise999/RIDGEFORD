@@ -18,6 +18,7 @@ import {
   PiggyBank,
 } from "lucide-react";
 import { fmtMoney, fmtRelativeDate, maskIban, cx } from "@/lib/utils";
+import { accountCurrency, currencySymbol, accountIdentifier } from "@/lib/account-currency";
 import { SpendingChart } from "@/components/dashboard/SpendingChart";
 import { CategoryBreakdown } from "@/components/dashboard/CategoryBreakdown";
 import { AccountSwitcher } from "@/components/dashboard/AccountSwitcher";
@@ -28,6 +29,8 @@ type User = {
   first_name: string | null;
   last_name: string | null;
   iban: string | null;
+  account_number: string | null;
+  currency: "EUR" | "USD";
   card_last4: string | null;
   balance_checking: number | string;
   balance_savings: number | string;
@@ -164,6 +167,8 @@ export default function DashboardOverview() {
       ? num(me?.balance_savings)
       : num(me?.balance_checking);
 
+  const cur = accountCurrency(me?.currency);
+  const money = (v: number | string) => fmtMoney(v, cur);
   const recentTxns = accountTxns.slice(0, 8);
   const pendingTransfers = (transfers || [])
     .filter((t) => t && t.status === "pending_admin")
@@ -206,7 +211,7 @@ export default function DashboardOverview() {
                 {account === "checking" ? "Current account" : "Savings account"}
               </div>
               <div className="mt-1.5 font-mono text-[11px] acct-hero__muted tnum truncate">
-                {maskIban(me?.iban || "")}
+                {cur === "USD" ? accountIdentifier({ currency: cur, account_number: me?.account_number }) : maskIban(me?.iban || "")}
               </div>
             </div>
             <button
@@ -220,10 +225,10 @@ export default function DashboardOverview() {
 
           <div className="mt-5 flex items-baseline gap-2">
             <span className="stat-figure acct-hero__figure text-[44px] sm:text-[62px] leading-none">
-              {hideBalance ? "••••••" : fmtMoney(currentBalance).replace("€", "").trim()}
+              {hideBalance ? "••••••" : money(currentBalance).replace(/[€$]/g, "").trim()}
             </span>
             {!hideBalance && (
-              <span className="font-display text-[22px] sm:text-[28px] acct-hero__label">€</span>
+              <span className="font-display text-[22px] sm:text-[28px] acct-hero__label">{currencySymbol(cur)}</span>
             )}
           </div>
 
@@ -233,7 +238,7 @@ export default function DashboardOverview() {
                 Received · 30 days
               </span>
               <span className="mt-0.5 block tnum acct-hero__value">
-                {hideBalance ? "•••" : fmtMoney(recv30)}
+                {hideBalance ? "•••" : money(recv30)}
               </span>
             </span>
             <span className="text-[11.5px]">
@@ -241,14 +246,14 @@ export default function DashboardOverview() {
                 Available now
               </span>
               <span className="mt-0.5 block tnum acct-hero__value">
-                {hideBalance ? "•••" : fmtMoney(currentBalance)}
+                {hideBalance ? "•••" : money(currentBalance)}
               </span>
             </span>
             <span className="text-[11.5px]">
               <span className="block text-[10px] uppercase tracking-[0.16em] acct-hero__muted">
-                Protection
+                {cur === "EUR" ? "Protection" : "Account currency"}
               </span>
-              <span className="mt-0.5 block acct-hero__value">100.000 €</span>
+              <span className="mt-0.5 block acct-hero__value">{cur === "EUR" ? "100.000 €" : cur}</span>
             </span>
           </div>
 
@@ -281,27 +286,27 @@ export default function DashboardOverview() {
             <span className="text-[14px] font-semibold acct-hero__value tnum shrink-0">
               {hideBalance
                 ? "•••"
-                : fmtMoney(otherBalance)}
+                : money(otherBalance)}
             </span>
           </button>
         </div>
       </section>
 
       {/* Crypto bar — tap through to the desk */}
-      <CryptoBar hideBalance={hideBalance} />
+      {cur === "EUR" && <CryptoBar hideBalance={hideBalance} />}
 
       {/* KPI strip */}
       <section className="grid grid-cols-2 gap-3">
         <KPI
           label="Spent · 30d"
-          value={fmtMoney(spent30)}
+          value={money(spent30)}
           deltaLabel={spentPrev > 0 ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}% vs. prev` : "—"}
           deltaUp={delta > 0}
           tone="ink"
         />
         <KPI
           label="Received · 30d"
-          value={fmtMoney(recv30)}
+          value={money(recv30)}
           deltaLabel={`${last30.filter((t) => t.direction === "credit").length} incoming`}
           deltaUp={false}
           tone="brand"
@@ -317,7 +322,7 @@ export default function DashboardOverview() {
                 Spending · last 30 days
               </div>
               <div className="mt-1 text-[24px] sm:text-[28px] font-bold text-ink-900 tracking-tight tabular-nums">
-                {fmtMoney(spent30)}
+                {money(spent30)}
               </div>
             </div>
             <div className="text-right">
@@ -329,7 +334,7 @@ export default function DashboardOverview() {
             </div>
           </div>
           <div className="mt-4">
-            <SpendingChart txns={accountTxns} days={30} account={account} />
+            <SpendingChart txns={accountTxns} days={30} account={account} currency={cur} />
           </div>
         </div>
 
@@ -341,7 +346,7 @@ export default function DashboardOverview() {
             <Sparkles className="h-4 w-4 text-ink-300" />
           </div>
           <div className="mt-4">
-            <CategoryBreakdown txns={last30} account={account} />
+            <CategoryBreakdown txns={last30} account={account} currency={cur} />
           </div>
         </div>
       </section>
@@ -371,7 +376,7 @@ export default function DashboardOverview() {
                 </div>
                 <div className="text-right">
                   <div className="text-[14px] font-bold text-ink-900 tabular-nums">
-                    {fmtMoney(num(t.amount), t.currency || "EUR")}
+                    {fmtMoney(num(t.amount), t.currency || cur)}
                   </div>
                   <div className="text-[10.5px] text-amber-300 font-semibold uppercase tracking-wide">
                     Pending
@@ -425,7 +430,7 @@ export default function DashboardOverview() {
                     )}
                   >
                     {t.direction === "credit" ? "+ " : "− "}
-                    {fmtMoney(num(t.amount), t.currency || "EUR")}
+                    {fmtMoney(num(t.amount), t.currency || cur)}
                   </div>
                 </div>
               </li>

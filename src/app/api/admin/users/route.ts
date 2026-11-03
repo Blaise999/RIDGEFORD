@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     let query = sb
       .from("users")
       .select(
-        "id,email,first_name,last_name,role,blocked,blocked_reason,iban," +
+        "id,email,first_name,last_name,role,blocked,blocked_reason,iban,account_number,currency," +
           "balance_checking,balance_savings,created_at,admin_owner_id,referral_code,onboarding_status,kyc_risk"
       )
       .eq("role", "user")

@@ -13,12 +13,13 @@ export default async function CardsPage() {
   const sb = supabaseAdmin();
   const { data: user } = await sb
     .from("users")
-    .select("first_name,last_name,card_last4,balance_checking,country")
+    .select("first_name,last_name,card_last4,balance_checking,country,currency")
     .eq("id", u.id)
     .single();
 
   const holder = `${user?.first_name || "Account"} ${user?.last_name || "Holder"}`.toUpperCase();
-  const last4 = user?.card_last4 || "4417";
+  const currency = user?.currency === "USD" ? "USD" : "EUR";
+  const last4 = user?.card_last4 || (currency === "USD" ? "••••" : "4417");
 
   return (
     <div className="pt-6 pb-12 max-w-5xl mx-auto">
@@ -26,13 +27,12 @@ export default async function CardsPage() {
         <div>
           <h1 className="font-display text-[30px] tracking-tight text-ink-900">Your card</h1>
           <p className="text-[13.5px] text-ink-500 mt-1">
-            A euro debit card. No fee anywhere in the euro area, and the
-            interchange your merchant pays is capped by regulation at 0,2 %.
+            {currency === "EUR" ? "A euro debit card. No fee anywhere in the euro area, and the interchange your merchant pays is capped by regulation at 0,2 %." : "Dollar account card details are available once your issuing partner provisions them."}
           </p>
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full border border-ink-200 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-500">
           <ShieldCheck className="h-3.5 w-3.5 text-steel" />
-          Active
+          {currency === "EUR" ? "Active" : (user?.card_last4 ? "Card details on file" : "Provisioning pending")}
         </span>
       </div>
 
@@ -100,7 +100,7 @@ export default async function CardsPage() {
               Available to spend
             </div>
             <div className="mt-1.5 font-display text-[34px] text-ink-900 tracking-tight tnum leading-none">
-              {fmtMoney(user?.balance_checking || 0)}
+              {fmtMoney(user?.balance_checking || 0, currency)}
             </div>
             <div className="mt-2 text-[11.5px] text-ink-400">From your current account</div>
           </div>
@@ -128,9 +128,7 @@ export default async function CardsPage() {
           </div>
 
           <p className="text-[11px] leading-relaxed text-ink-400 px-1">
-            Interchange on European consumer cards is capped at 0,2 % on debit
-            and 0,3 % on credit under Reg. (EU) 2015/751. We mention it because
-            most banks would rather you didn&apos;t know the number.
+            {currency === "EUR" ? "Interchange on European consumer cards is capped at 0,2 % on debit and 0,3 % on credit under Reg. (EU) 2015/751. We mention it because most banks would rather you didn't know the number." : "USD card features require a U.S. issuing partner and card integration."}
           </p>
         </div>
       </div>

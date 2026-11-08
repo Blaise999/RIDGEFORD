@@ -87,18 +87,57 @@ export default function InternationalPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
-    if (!hasValidQuote || !quote) {
-      setErr("Conversion preview is unavailable or expired. Change the amount to refresh the quote.");
+    const sendingAmount = Math.round(Number(amount.replace(/,/g, ".")) * 100) / 100;
+    if (!currencyLoaded || !Number.isFinite(sendingAmount) || sendingAmount < 0.01) {
+      setErr("Enter a valid sending amount to preview the transfer.");
       return;
     }
+
     setLoading(true);
     try {
+      // Never begin the ten-minute email OTP using a quote that may have
+      // started its expiry countdown while the customer filled the form.
+      // This fresh quote has its own fifteen-minute window.
+      const response = await fetch("/api/fx/quote", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ country: countryCode, amount: sendingAmount }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok || !data.quote) {
+        throw new Error(data.error || "Could not refresh the conversion estimate. Please try again.");
+      }
+
+      const freshQuote = data.quote as FxQuote;
+      if (freshQuote.country !== countryCode ||
+          freshQuote.source_currency !== baseCurrency ||
+          Number(freshQuote.source_amount) !== sendingAmount) {
+        throw new Error("The conversion estimate doesn't match your transfer details. Please review them.");
+      }
+
+      const previewedQuote = quote && quote.country === countryCode &&
+        quote.source_currency === baseCurrency &&
+        Number(quote.source_amount) === sendingAmount ? quote : null;
+      const rateChanged = previewedQuote && (
+        Math.abs(Number(previewedQuote.recipient_amount) - Number(freshQuote.recipient_amount)) > 0.0000001 ||
+        Math.abs(Number(previewedQuote.fx_rate) - Number(freshQuote.fx_rate)) > 0.000000001
+      );
+      setQuote(freshQuote);
+      setQuoteError(null);
+      if (!previewedQuote || rateChanged) {
+        setErr(rateChanged
+          ? "The exchange-rate estimate has changed. Review the updated recipient amount, then press Review & verify with OTP again."
+          : "Review the refreshed conversion estimate, then press Review & verify with OTP again.");
+        return;
+      }
+
       const started = await otp.begin({
         rail: "swift",
-        amount: Number(quote.source_amount), // Sender amount, NOT destination amount
-        currency: quote.recipient_currency,
+        amount: Number(freshQuote.source_amount), // Sender amount, NOT destination amount
+        currency: freshQuote.recipient_currency,
         source_currency: baseCurrency,
-        fx_quote_id: quote.id,
+        fx_quote_id: freshQuote.id,
         beneficiary_name: name.trim(),
         beneficiary_iban: accountNumber.replace(/\s+/g, "").toUpperCase(),
         beneficiary_bic: bic.replace(/\s+/g, "").toUpperCase(),
@@ -155,7 +194,7 @@ export default function InternationalPage() {
             <div className="flex gap-2.5 items-start"><ArrowRightLeft className="h-4 w-4 shrink-0 mt-0.5 text-brand-700" /><div className="space-y-1.5 text-[12.5px] text-ink-600">
               {hasValidQuote && quote ? <>
                 <p className="font-bold text-ink-900">1 {baseCurrency} ≈ {Number(quote.fx_rate).toLocaleString("en-US", { maximumFractionDigits: 6 })} {destination.currency}</p>
-                <p>Reference rate dated {quote.fx_rate_date}. Preview expires after five minutes; exchange and settlement are not guaranteed.</p>
+                <p>Reference rate dated {quote.fx_rate_date}. Estimate refreshed before OTP; valid for 15 minutes. Exchange and settlement are not guaranteed.</p>
               </> : <p>{quoteError || "Enter an amount to preview the conversion using a published reference exchange rate."}</p>}
               <p className="text-ink-500">Receiving-bank and correspondent fees, if any, are not included. Actual settlement requires an integrated banking provider.</p>
             </div></div>
@@ -179,7 +218,7 @@ export default function InternationalPage() {
         </section>
         {err && <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-[13px] text-red-700">{err}</p>}
         <div className="flex gap-3"><button type="button" onClick={() => router.back()} className="btn btn-ghost flex-1">Cancel</button>
-          <button type="submit" disabled={loading || quoting || !hasValidQuote} className="btn btn-brand flex-1 disabled:opacity-50">
+          <button type="submit" disabled={loading || quoting || !currencyLoaded || !Number.isFinite(Number(amount)) || Number(amount) <= 0} className="btn btn-brand flex-1 disabled:opacity-50">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Review &amp; verify with OTP
           </button></div>
         <p className="text-[11.5px] text-ink-400 text-center">Your request enters compliance review. Approval is not proof of funds settlement.</p>

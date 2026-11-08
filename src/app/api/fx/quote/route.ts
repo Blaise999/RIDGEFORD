@@ -52,7 +52,10 @@ export async function POST(req: NextRequest) {
     if (!Number.isFinite(recipientAmount) || recipientAmount <= 0)
       return fail(400, "Amount is too small for this currency pair.");
 
-    const expiresAt = new Date(Date.now() + 5 * 60_000).toISOString();
+    // A fresh quote is issued immediately before transfer OTP authorisation.
+    // OTP validity is ten minutes; give the indicative quote five extra
+    // minutes of headroom so the two timers cannot contradict one another.
+    const expiresAt = new Date(Date.now() + 15 * 60_000).toISOString();
     const { data: quote, error } = await sb.from("fx_transfer_quotes")
       .insert({
         user_id: auth.id,

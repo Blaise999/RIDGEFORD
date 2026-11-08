@@ -38,7 +38,7 @@ export function useTransferOtp() {
         credentials: "same-origin",
         body: JSON.stringify({
           amount: p.amount,
-          currency: p.currency,
+          currency: p.fx_quote_id ? p.source_currency : p.currency,
           beneficiary_name: p.beneficiary_name,
         }),
       });
@@ -115,7 +115,7 @@ export function useTransferOtp() {
         credentials: "same-origin",
         body: JSON.stringify({
           amount: payload.amount,
-          currency: payload.currency,
+          currency: payload.fx_quote_id ? payload.source_currency : payload.currency,
           beneficiary_name: payload.beneficiary_name,
         }),
       });

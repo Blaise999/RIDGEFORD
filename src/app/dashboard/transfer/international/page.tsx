@@ -1,183 +1,195 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { accountCurrency, type AccountCurrency } from "@/lib/account-currency";
+import { DESTINATION_COUNTRIES, countryByCode } from "@/lib/international-countries";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Globe2, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRightLeft, Globe2, Loader2, RefreshCw } from "lucide-react";
 import { TransferOtpModal } from "@/components/dashboard/TransferOtpModal";
 import { useTransferOtp } from "@/lib/useTransferOtp";
+import { fmtFxMoney } from "@/lib/fx-money";
 
-const CURRENCIES = ["EUR", "USD", "GBP", "CHF", "SEK", "NOK", "DKK", "JPY", "AUD", "CAD", "AED"];
+type FxQuote = {
+  id: string;
+  country: string;
+  source_currency: string;
+  recipient_currency: string;
+  source_amount: number;
+  recipient_amount: number;
+  fx_rate: number;
+  fx_rate_date: string;
+  expires_at: string;
+  provider: string;
+  disclaimer: string;
+};
 
 export default function InternationalPage() {
   const router = useRouter();
   const otp = useTransferOtp();
   const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState("EUR");
   const [baseCurrency, setBaseCurrency] = useState<AccountCurrency>("EUR");
-  useEffect(() => { fetch("/api/auth/me").then(r => r.json()).then(d => {
-    if (d?.ok) { const c = accountCurrency(d.user?.currency); setBaseCurrency(c); setCurrency(c); }
-  }).catch(() => {}); }, []);
+  const [currencyLoaded, setCurrencyLoaded] = useState(false);
+  const [countryCode, setCountryCode] = useState("FR");
+  const destination = useMemo(() => countryByCode(countryCode)!, [countryCode]);
+  const [quote, setQuote] = useState<FxQuote | null>(null);
+  const [quoting, setQuoting] = useState(false);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
   const [name, setName] = useState("");
-  const [iban, setIban] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
   const [bic, setBic] = useState("");
-  const [country, setCountry] = useState("");
+  const [bankName, setBankName] = useState("");
+  const [localBankCode, setLocalBankCode] = useState("");
   const [address, setAddress] = useState("");
   const [intermediary, setIntermediary] = useState("");
   const [reference, setReference] = useState("");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => { if (d?.ok) setBaseCurrency(accountCurrency(d.user?.currency)); })
+      .catch(() => {})
+      .finally(() => setCurrencyLoaded(true));
+  }, []);
+
+  useEffect(() => {
+    setQuote(null);
+    setQuoteError(null);
+    const parsed = Number(amount.replace(/,/g, "."));
+    if (!currencyLoaded || !Number.isFinite(parsed) || parsed <= 0) return;
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setQuoting(true);
+      try {
+        const result = await fetch("/api/fx/quote", {
+          method: "POST", headers: { "content-type": "application/json" },
+          credentials: "same-origin", signal: controller.signal,
+          body: JSON.stringify({ country: countryCode, amount: parsed }),
+        });
+        const data = await result.json();
+        if (!result.ok || !data.ok) throw new Error(data.error || "Could not load an exchange rate.");
+        if (!controller.signal.aborted) setQuote(data.quote);
+      } catch (e: any) {
+        if (!controller.signal.aborted) setQuoteError(e?.message || "Could not load an exchange rate.");
+      } finally {
+        if (!controller.signal.aborted) setQuoting(false);
+      }
+    }, 500);
+    return () => { clearTimeout(timer); controller.abort(); setQuoting(false); };
+  }, [amount, countryCode, currencyLoaded, baseCurrency]);
+
+  const hasValidQuote = Boolean(quote && quote.country === countryCode &&
+    Number(quote.source_amount) === Math.round(Number(amount.replace(/,/g, ".")) * 100) / 100 &&
+    quote.source_currency === baseCurrency && Date.parse(quote.expires_at) > Date.now());
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
+    if (!hasValidQuote || !quote) {
+      setErr("Conversion preview is unavailable or expired. Change the amount to refresh the quote.");
+      return;
+    }
     setLoading(true);
     try {
-      const okStarted = await otp.begin({
+      const started = await otp.begin({
         rail: "swift",
-        amount: Number(amount.replace(",", ".")),
-        currency,
-        beneficiary_name: name,
-        beneficiary_iban: iban.replace(/\s+/g, ""),
-        beneficiary_bic: bic.replace(/\s+/g, ""),
-        beneficiary_country: country,
-        beneficiary_address: address || undefined,
-        intermediary_bank: intermediary || undefined,
-        reference,
+        amount: Number(quote.source_amount), // Sender amount, NOT destination amount
+        currency: quote.recipient_currency,
+        source_currency: baseCurrency,
+        fx_quote_id: quote.id,
+        beneficiary_name: name.trim(),
+        beneficiary_iban: accountNumber.replace(/\s+/g, "").toUpperCase(),
+        beneficiary_bic: bic.replace(/\s+/g, "").toUpperCase(),
+        beneficiary_country: countryCode,
+        beneficiary_bank_name: bankName.trim(),
+        beneficiary_local_bank_code: localBankCode.trim(),
+        beneficiary_address: address.trim() || undefined,
+        intermediary_bank: intermediary.trim() || undefined,
+        reference: reference.trim() || undefined,
       });
-      if (!okStarted) setErr(otp.error || "Could not start authorisation");
+      if (!started) setErr(otp.error || "Could not start authorisation");
     } catch (e: any) {
-      setErr(e.message);
-    } finally {
-      setLoading(false);
-    }
+      setErr(e?.message || "Could not start authorisation");
+    } finally { setLoading(false); }
   }
 
   return (
-    <div className="pt-6 max-w-2xl mx-auto">
+    <div className="pt-6 max-w-3xl mx-auto">
       <Link href="/dashboard/transfer" className="inline-flex items-center gap-1.5 text-[13px] text-ink-500 hover:text-ink-900">
-        <ArrowLeft className="h-4 w-4" /> Back
+        <ArrowLeft className="h-4 w-4" /> Back to transfers
       </Link>
-
-      <h1 className="mt-3 dash-h1 text-[30px] text-ink-900">
-        International transfer
-      </h1>
-      <p className="text-[13.5px] text-ink-500 mt-1">
-        {baseCurrency === "USD" ? "Request an international USD wire using the beneficiary bank SWIFT/BIC and account number." : "Send a SWIFT transfer outside the SEPA area. The recipient needs their IBAN and BIC."}
+      <div className="mt-4 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-700">
+        <Globe2 className="h-4 w-4" /> Cross-border banking
+      </div>
+      <h1 className="mt-2 dash-h1 text-[32px] text-ink-900">International transfers</h1>
+      <p className="mt-2 text-[14px] text-ink-500 max-w-2xl">
+        Choose where your money is going. We&apos;ll show the destination currency, recipient banking details and an exchange-rate estimate before you submit a request.
       </p>
 
-      <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-500/10 text-brand-700 px-3 py-1.5 text-[12.5px] font-semibold">
-        <Globe2 className="h-3.5 w-3.5" /> SWIFT · {baseCurrency} account
-      </div>
-
-      <form onSubmit={submit} className="mt-6 card p-6 space-y-4">
-        <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
-          <label className="block">
-            <span className="text-[12.5px] font-semibold text-ink-700">Amount</span>
-            <input
-              required
-              inputMode="decimal"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0,00"
-              className="mt-1.5 w-full h-12 rounded-xl border border-ink-200 bg-panel px-4 text-[18px] font-semibold outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
-            />
-          </label>
-          <label className="block">
-            <span className="text-[12.5px] font-semibold text-ink-700">Currency</span>
-            <select
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              className="mt-1.5 h-12 rounded-xl border border-ink-200 bg-panel px-3 text-[15px] font-semibold outline-none focus:border-brand-500"
-            >
-              {(baseCurrency === "USD" ? ["USD"] : CURRENCIES).map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <Field label="Beneficiary full name">
-          <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Sofía Martín García" className="input" />
-        </Field>
-
-        <div className="grid sm:grid-cols-2 gap-3">
-          <Field label={country.toLowerCase() === "united states" || country.toUpperCase() === "US" ? "Beneficiary U.S. account number" : "Beneficiary IBAN / Account number"}>
-            <input required value={iban} onChange={(e) => setIban(e.target.value.toUpperCase())} placeholder={country.toLowerCase() === "united states" || country.toUpperCase() === "US" ? "Recipient account number" : "IBAN or local account number"} className="input tabular-nums" />
-          </Field>
-          <Field label="BIC / SWIFT code">
-            <input required value={bic} onChange={(e) => setBic(e.target.value.toUpperCase())} placeholder="Bank-issued SWIFT/BIC" className="input" />
-          </Field>
-        </div>
-
-        <div className="grid sm:grid-cols-2 gap-3">
-          <Field label="Beneficiary country">
-            <input required value={country} onChange={(e) => setCountry(e.target.value)} placeholder="Spain" className="input" />
-          </Field>
-          <Field label="Beneficiary address (optional)">
-            <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Gran Via 1, 28013 Madrid" className="input" />
-          </Field>
-        </div>
-
-        <Field label="Intermediary bank (optional)" hint="Some rails require a correspondent bank — ask your recipient if unsure.">
-          <input value={intermediary} onChange={(e) => setIntermediary(e.target.value)} placeholder="e.g. Citibank N.A. London" className="input" />
-        </Field>
-
-        <Field label="Reference" hint="Shown on the recipient's statement.">
-          <input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Invoice 2024-042" maxLength={140} className="input" />
-        </Field>
-
-        {err && (
-          <div className="rounded-xl border border-red-500/30 bg-red-500/10 text-red-300 text-[13.5px] p-3">
-            {err}
+      <form onSubmit={submit} className="mt-7 space-y-5">
+        <section className="card p-5 sm:p-6 space-y-5">
+          <div className="flex items-center justify-between gap-3">
+            <div><div className="text-[11px] uppercase font-semibold tracking-[0.13em] text-ink-400">01 / Destination &amp; amount</div>
+              <h2 className="mt-1 font-bold text-[19px] text-ink-900">Where are you sending?</h2></div>
+            <div className="rounded-full bg-brand-500/10 text-brand-700 text-[12px] font-semibold px-3 py-1.5">SWIFT request</div>
           </div>
-        )}
+          <Field label="Destination country">
+            <select required value={countryCode} onChange={(e) => { setCountryCode(e.target.value); setAccountNumber(""); setBic(""); setLocalBankCode(""); }} className="field-input">
+              {DESTINATION_COUNTRIES.map((country) => <option value={country.code} key={country.code}>{country.flag} {country.label}</option>)}
+            </select>
+          </Field>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <Field label={`You send (${baseCurrency})`}>
+              <div className="relative"><input required min="0.01" step="0.01" type="number" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="1000.00" className="field-input pr-16 font-bold text-[19px] tabular-nums" />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-ink-500">{baseCurrency}</span></div>
+            </Field>
+            <Field label={`Estimated recipient amount (${destination.currency})`}>
+              <div className="relative"><div className="field-input flex items-center pr-16 font-bold text-[19px] tabular-nums bg-ink-50/60" aria-live="polite">
+                {quoting ? <Loader2 className="h-4 w-4 animate-spin text-ink-400" /> : hasValidQuote && quote ? fmtFxMoney(Number(quote.recipient_amount), destination.currency) : "—"}</div>
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-ink-500">{destination.currency}</span></div>
+            </Field>
+          </div>
+          <div className="rounded-2xl border border-ink-100 bg-ink-50/60 p-4">
+            <div className="flex gap-2.5 items-start"><ArrowRightLeft className="h-4 w-4 shrink-0 mt-0.5 text-brand-700" /><div className="space-y-1.5 text-[12.5px] text-ink-600">
+              {hasValidQuote && quote ? <>
+                <p className="font-bold text-ink-900">1 {baseCurrency} ≈ {Number(quote.fx_rate).toLocaleString("en-US", { maximumFractionDigits: 6 })} {destination.currency}</p>
+                <p>Reference rate dated {quote.fx_rate_date}. Preview expires after five minutes; exchange and settlement are not guaranteed.</p>
+              </> : <p>{quoteError || "Enter an amount to preview the conversion using a published reference exchange rate."}</p>}
+              <p className="text-ink-500">Receiving-bank and correspondent fees, if any, are not included. Actual settlement requires an integrated banking provider.</p>
+            </div></div>
+          </div>
+        </section>
 
-        <div className="flex gap-3 pt-1">
-          <button type="button" onClick={() => router.back()} className="btn btn-ghost flex-1">
-            Cancel
-          </button>
-          <button type="submit" disabled={loading} className="btn btn-brand flex-1 disabled:opacity-70">
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Send for review
-          </button>
-        </div>
-
-        <p className="text-[11.5px] text-ink-400 text-center">
-          {baseCurrency === "EUR" ? "SWIFT transfers are reviewed by our compliance team before they settle." : "USD wire submission requires an integrated licensed banking provider for actual settlement."}
-        </p>
+        <section className="card p-5 sm:p-6 space-y-4">
+          <div className="text-[11px] uppercase font-semibold tracking-[0.13em] text-ink-400">02 / Beneficiary</div>
+          <div className="flex items-center justify-between gap-3"><h2 className="font-bold text-[19px] text-ink-900">Bank details for {destination.label}</h2><span className="text-[13px] text-ink-500">{destination.flag} {destination.currency}</span></div>
+          <p className="rounded-xl bg-ink-50 text-[12.5px] text-ink-600 p-3">{destination.hint} Always confirm the exact wire instructions with the recipient.</p>
+          <Field label="Beneficiary full legal name"><input required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} placeholder="Name as held by the receiving bank" className="field-input" /></Field>
+          <Field label={destination.accountLabel}><input required maxLength={70} value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} placeholder={destination.accountPlaceholder} className="field-input tabular-nums" /></Field>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <Field label="Receiving bank SWIFT / BIC"><input required maxLength={11} value={bic} onChange={(e) => setBic(e.target.value.toUpperCase())} placeholder="Bank-issued BIC" className="field-input uppercase tabular-nums" /></Field>
+            <Field label="Receiving bank name"><input required maxLength={120} value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="Bank name" className="field-input" /></Field>
+          </div>
+          {destination.bankCodeLabel && <Field label={`${destination.bankCodeLabel}${destination.bankCodeRequired ? " (required)" : " (if supplied)"}`}><input required={destination.bankCodeRequired} maxLength={60} value={localBankCode} onChange={(e) => setLocalBankCode(e.target.value)} placeholder={destination.bankCodePlaceholder} className="field-input tabular-nums" /></Field>}
+          <Field label="Recipient address (optional)"><input maxLength={200} value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Recipient street, city and postcode" className="field-input" /></Field>
+          <Field label="Intermediary bank (if provided)"><input maxLength={200} value={intermediary} onChange={(e) => setIntermediary(e.target.value)} placeholder="Correspondent bank information" className="field-input" /></Field>
+          <Field label="Payment reference (optional)"><input maxLength={140} value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Invoice or payment purpose" className="field-input" /></Field>
+        </section>
+        {err && <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-[13px] text-red-700">{err}</p>}
+        <div className="flex gap-3"><button type="button" onClick={() => router.back()} className="btn btn-ghost flex-1">Cancel</button>
+          <button type="submit" disabled={loading || quoting || !hasValidQuote} className="btn btn-brand flex-1 disabled:opacity-50">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Review &amp; verify with OTP
+          </button></div>
+        <p className="text-[11.5px] text-ink-400 text-center">Your request enters compliance review. Approval is not proof of funds settlement.</p>
       </form>
-
-      <style jsx>{`
-        .input {
-          width: 100%; height: 44px; border-radius: 12px;
-          border: 1px solid #d9dee5; background: #fff;
-          padding: 0 1rem; font-size: 15px; outline: none;
-        }
-        .input:focus { border-color: #2f66ff; box-shadow: 0 0 0 1px #2f66ff; }
-      `}</style>
-
-      <TransferOtpModal
-        {...otp.modalProps}
-        onSubmit={(code) =>
-          otp.confirm(code, (d) =>
-            router.push(
-              `/dashboard/transfer/success?ref=${d.transfer.reference_id}`
-            )
-          )
-        }
-      />
+      <style jsx>{`.field-input {width:100%;min-height:48px;border-radius:12px;border:1px solid #d9dee5;background:#fff;padding:0 1rem;font-size:15px;outline:none;color:#17212f;} .field-input:focus{border-color:#2f66ff;box-shadow:0 0 0 1px #2f66ff;} .field-input:disabled{opacity:.65;}`}</style>
+      <TransferOtpModal {...otp.modalProps} onSubmit={(code) => otp.confirm(code, (d) => router.push(`/dashboard/transfer/success?ref=${d.transfer.reference_id}`))} />
     </div>
   );
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="text-[12.5px] font-semibold text-ink-700">{label}</span>
-      <div className="mt-1.5">{children}</div>
-      {hint && <span className="mt-1 block text-[11.5px] text-ink-400">{hint}</span>}
-    </label>
-  );
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return <label className="block"><span className="text-[12.5px] font-semibold text-ink-700">{label}</span><div className="mt-1.5">{children}</div></label>;
 }

@@ -1,10 +1,10 @@
+import { fmtFxMoney } from "@/lib/fx-money";
 import { NextRequest } from "next/server";
 import { requireActiveUser } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { ok, fail, handleError } from "@/lib/http";
 import { generateOtp, storeOtp } from "@/lib/otp";
 import { sendOtp, deferEmail } from "@/lib/email";
-import { fmtMoney } from "@/lib/utils";
 
 /**
  * POST /api/transfers/otp
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       sendOtp(sender.email, code, "transfer", {
         amount:
           Number.isFinite(amount) && amount > 0
-            ? fmtMoney(amount, currency)
+            ? fmtFxMoney(amount, currency)
             : undefined,
         beneficiary: beneficiary || undefined,
       })

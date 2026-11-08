@@ -4,7 +4,9 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { ok, fail, handleError } from "@/lib/http";
 import { genReference, fmtMoney } from "@/lib/utils";
 import { verifyIban, comparePayeeName, normalizeIban } from "@/lib/iban";
-import { accountCurrency, validSwift } from "@/lib/account-currency";
+import { accountCurrency, validSwift, validAba } from "@/lib/account-currency";
+import { countryByCode, isValidIbanForCountry } from "@/lib/international-countries";
+import { fmtFxMoney } from "@/lib/fx-money";
 import { sendTransferSubmitted, deferEmail } from "@/lib/email";
 import { verifyOtp } from "@/lib/otp";
 import { notify } from "@/lib/notify";
@@ -50,6 +52,9 @@ export async function POST(req: NextRequest) {
       otp,
       instant,
       vop_acknowledged,
+      fx_quote_id,
+      beneficiary_bank_name,
+      beneficiary_local_bank_code,
     } = body || {};
 
     // Filled in by the SEPA branch below; the euro area is the default case
@@ -98,21 +103,41 @@ export async function POST(req: NextRequest) {
 
     const baseCurrency = accountCurrency(sender.currency);
     if (baseCurrency === "USD" && rail !== "internal" && rail !== "swift") return fail(400, "SEPA is available only on EUR accounts");
-    // USD balances must never be silently used as euros or converted without a quote.
-    if (baseCurrency === "USD" && String(currency || "USD").toUpperCase() !== "USD") return fail(400, "Only USD transfers are enabled for dollar accounts");
     const balance = accType === "savings" ? Number(sender.balance_savings) : Number(sender.balance_checking);
 
-    // For SWIFT in a non-EUR currency, convert to EUR via live FX.
-    // Balance check, ledger debit, and fee are all in EUR since the Ridgeford account is EUR.
-    let amtInEur = amt;
-    let fxRate: number | null = null;
-    if (baseCurrency === "EUR" && rail === "swift" && currency && String(currency).toUpperCase() !== "EUR") {
-      const { convertToEur, fxRateEurTo } = await import("@/lib/fx");
-      amtInEur = await convertToEur(amt, String(currency));
-      fxRate = await fxRateEurTo(String(currency)); // 1 EUR = fxRate <currency>
-      amtInEur = Math.round(amtInEur * 100) / 100;
+    // A new international request always uses a server-issued quote. The
+    // browser cannot select a rate or invent the receiving amount.
+    const hasNewFxQuote = rail === "swift" && typeof fx_quote_id === "string" && fx_quote_id.length > 0;
+    let fxQuote: any = null;
+    if (hasNewFxQuote) {
+      const { data: stored, error: quoteErr } = await sb.from("fx_transfer_quotes")
+        .select("*")
+        .eq("id", fx_quote_id)
+        .eq("user_id", u.id)
+        .gt("expires_at", new Date().toISOString())
+        .maybeSingle();
+      if (quoteErr || !stored) return fail(409, "Conversion preview expired. Return to International Transfers for a new quote.");
+      const dest = countryByCode(String(beneficiary_country || ""));
+      if (!dest || stored.destination_country !== dest.code || stored.recipient_currency !== dest.currency ||
+          stored.source_currency !== baseCurrency ||
+          Math.abs(Number(stored.source_amount) - amt) > 0.001 ||
+          String(currency || "").toUpperCase() !== dest.currency) {
+        return fail(400, "Transfer details no longer match your conversion preview.");
+      }
+      fxQuote = stored;
     }
-    if (balance < amtInEur) return fail(400, `Insufficient ${accType} balance`);
+
+    // Legacy USD transfers must remain USD unless they use the dedicated FX quote flow.
+    if (!hasNewFxQuote && baseCurrency === "USD" && String(currency || "USD").toUpperCase() !== "USD")
+      return fail(400, "A currency conversion preview is required for a dollar-to-foreign-currency transfer.");
+    let debitAmount = amt;
+    if (!hasNewFxQuote && baseCurrency === "EUR" && rail === "swift" && currency && String(currency).toUpperCase() !== "EUR") {
+      // Older transfer screens may still send recipient-currency amounts. Reject
+      // new unquoted cross-currency requests rather than converting with a
+      // silently fabricated 1:1 fallback.
+      return fail(400, "Please request a conversion preview on the International Transfers page.");
+    }
+    if (balance < debitAmount) return fail(400, `Insufficient ${accType} balance`);
 
     let beneficiary_user_id: string | null = null;
     if (rail === "internal") {
@@ -131,6 +156,18 @@ export async function POST(req: NextRequest) {
       if (!beneficiary_iban) return fail(400, "Beneficiary account number or IBAN required");
       if (!beneficiary_bic || !validSwift(String(beneficiary_bic).toUpperCase())) return fail(400, "A valid beneficiary SWIFT / BIC code is required");
       if (!beneficiary_country) return fail(400, "Beneficiary country required");
+      if (hasNewFxQuote) {
+        const dest = countryByCode(String(beneficiary_country));
+        if (!dest) return fail(400, "Unsupported destination country");
+        if (!beneficiary_bank_name || String(beneficiary_bank_name).trim().length < 2)
+          return fail(400, "Enter the receiving bank name");
+        if (dest.iban && !isValidIbanForCountry(String(beneficiary_iban), dest.code))
+          return fail(400, `Enter a valid ${dest.label} IBAN`);
+        if (dest.bankCodeRequired && !String(beneficiary_local_bank_code || "").trim())
+          return fail(400, `${dest.bankCodeLabel} is required`);
+        if (dest.code === "US" && !validAba(String(beneficiary_local_bank_code || "").replace(/\s/g, "")))
+          return fail(400, "Enter a valid nine-digit U.S. wire routing number supplied by the recipient's bank");
+      }
     } else {
       // ── SEPA, anywhere in the euro area ────────────────────────────────
       // Real mod-97 validation against the SEPA IBAN registry. A German bank
@@ -172,7 +209,9 @@ export async function POST(req: NextRequest) {
     const reference_id = genReference("TR");
     // Art. 5b IPR: an instant euro transfer may never cost more than a standard
     // one, so both are zero. Only SWIFT carries a fee.
-    const fee = rail === "swift" ? 14 : 0;
+    // The FX preview is indicative and does not price intermediary/wire charges.
+    // Do not debit an undisclosed fee on this new request path.
+    const fee = hasNewFxQuote ? 0 : rail === "swift" ? 14 : 0;
 
     const { data: transfer, error: tErr } = await sb
       .from("transfers")
@@ -184,8 +223,20 @@ export async function POST(req: NextRequest) {
         rail: rail === "sepa" && sepaInstant ? "sepa_instant" : rail,
         direction: "debit",
         account_type: accType,
-        amount: amt,
-        currency: baseCurrency === "USD" ? "USD" : currency || "EUR",
+        amount: fxQuote ? Number(fxQuote.recipient_amount) : amt,
+        currency: fxQuote ? fxQuote.recipient_currency : baseCurrency === "USD" ? "USD" : currency || "EUR",
+        ...(fxQuote ? {
+          fx_quote_id: fxQuote.id,
+          source_amount: Number(fxQuote.source_amount),
+          source_currency: fxQuote.source_currency,
+          recipient_amount: Number(fxQuote.recipient_amount),
+          recipient_currency: fxQuote.recipient_currency,
+          fx_rate: Number(fxQuote.fx_rate),
+          fx_rate_date: fxQuote.fx_rate_date,
+          fx_rate_provider: fxQuote.provider,
+          beneficiary_bank_name: String(beneficiary_bank_name || "").slice(0, 120),
+          beneficiary_local_bank_code: String(beneficiary_local_bank_code || "").slice(0, 60) || null,
+        } : {}),
         fee,
         beneficiary_name,
         beneficiary_iban: normalizedIban || beneficiary_iban || null,
@@ -212,17 +263,16 @@ export async function POST(req: NextRequest) {
       transfer_id: transfer.id,
       account_type: accType,
       direction: "debit",
-      amount: amtInEur, // Account currency — matches what approval will debit
+      amount: debitAmount, // Always the amount denominated in the sender's account currency.
       currency: baseCurrency,
       rail,
       category: "Transfer",
       counterparty_name: beneficiary_name,
       counterparty_iban: normalizedIban || beneficiary_iban || null,
       counterparty_email: beneficiary_email || null,
-      description:
-        fxRate && baseCurrency === "EUR" && currency !== "EUR"
-          ? `${amt.toFixed(2)} ${currency} @ ${fxRate.toFixed(4)} → EUR · ${reference || memo || "Transfer out"}`
-          : reference || memo || "Transfer out",
+      description: fxQuote
+        ? `International FX · ${Number(fxQuote.source_amount).toFixed(2)} ${baseCurrency} → ${Number(fxQuote.recipient_amount).toFixed(2)} ${fxQuote.recipient_currency} · 1 ${baseCurrency} = ${Number(fxQuote.fx_rate).toFixed(6)} ${fxQuote.recipient_currency} · ${reference || memo || "Pending review"}`
+        : reference || memo || "Transfer out",
       merchant: beneficiary_name,
       reference: reference_id,
       status: "pending",
@@ -232,8 +282,8 @@ export async function POST(req: NextRequest) {
       sendTransferSubmitted(sender.email, {
         firstName: sender.first_name || "there",
         reference: transfer.reference_id,
-        amount: amt,
-        currency: transfer.currency,
+        amount: fxQuote ? Number(fxQuote.source_amount) : amt,
+        currency: fxQuote ? baseCurrency : transfer.currency,
         beneficiaryName: beneficiary_name,
         rail,
       })
@@ -243,8 +293,12 @@ export async function POST(req: NextRequest) {
       u.id,
       "transfer_submitted",
       `Transfer ${transfer.reference_id} submitted`,
-      `${fmtMoney(amt, transfer.currency)} to ${beneficiary_name} — under review.`,
-      { transfer_id: transfer.id, reference: transfer.reference_id, amount: amt, rail, account_type: accType }
+      fxQuote
+        ? `${fmtFxMoney(Number(fxQuote.source_amount), baseCurrency)} → approximately ${fmtFxMoney(Number(fxQuote.recipient_amount), fxQuote.recipient_currency)} to ${beneficiary_name}. FX request awaiting approval; not yet settled.`
+        : `${fmtMoney(amt, transfer.currency)} to ${beneficiary_name} — under review.`,
+      { transfer_id: transfer.id, reference: transfer.reference_id, amount: amt, rail, account_type: accType,
+        ...(fxQuote ? { source_currency: baseCurrency, recipient_currency: fxQuote.recipient_currency,
+          recipient_amount: fxQuote.recipient_amount, fx_rate: fxQuote.fx_rate, settlement: "not_settled" } : {}) }
     );
 
     return ok({ transfer });

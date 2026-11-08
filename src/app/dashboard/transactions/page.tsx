@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowDownLeft, ArrowUpRight, Filter, Search, Loader2 } from "lucide-react";
 import { fmtMoney, fmtRelativeDate, cx } from "@/lib/utils";
 import { accountCurrency, type AccountCurrency } from "@/lib/account-currency";
+import { fmtFxMoney } from "@/lib/fx-money";
 
 type Txn = {
   id: string;
@@ -20,6 +21,16 @@ type Txn = {
   reference: string | null;
   status: string;
   created_at: string;
+  fx?: {
+    fx_quote_id: string;
+    source_currency: string;
+    source_amount: number | string;
+    recipient_currency: string;
+    recipient_amount: number | string;
+    fx_rate: number | string;
+    beneficiary_country: string;
+    status: string;
+  } | null;
 };
 
 const TABS = [
@@ -59,14 +70,14 @@ export default function TransactionsPage() {
   const totalIn = useMemo(
     () =>
       (txns || [])
-        .filter((t) => t.direction === "credit")
+        .filter((t) => t.direction === "credit" && t.status === "posted")
         .reduce((s, t) => s + Number(t.amount), 0),
     [txns]
   );
   const totalOut = useMemo(
     () =>
       (txns || [])
-        .filter((t) => t.direction === "debit")
+        .filter((t) => t.direction === "debit" && t.status === "posted")
         .reduce((s, t) => s + Number(t.amount), 0),
     [txns]
   );
@@ -92,14 +103,14 @@ export default function TransactionsPage() {
           <div className="mt-1 text-[28px] font-bold text-brand-600 tracking-tight">
             + {fmtMoney(totalIn, currency)}
           </div>
-          <div className="text-[12px] text-ink-400 mt-0.5">{(txns || []).filter((t) => t.direction === "credit").length} transactions</div>
+          <div className="text-[12px] text-ink-400 mt-0.5">{(txns || []).filter((t) => t.direction === "credit" && t.status === "posted").length} posted transactions</div>
         </div>
         <div className="card p-5">
           <div className="text-[11.5px] font-semibold uppercase tracking-[0.14em] text-ink-500">Sent</div>
           <div className="mt-1 text-[28px] font-bold text-ink-900 tracking-tight">
             − {fmtMoney(totalOut, currency)}
           </div>
-          <div className="text-[12px] text-ink-400 mt-0.5">{(txns || []).filter((t) => t.direction === "debit").length} transactions</div>
+          <div className="text-[12px] text-ink-400 mt-0.5">{(txns || []).filter((t) => t.direction === "debit" && t.status === "posted").length} posted transactions</div>
         </div>
       </div>
 
@@ -172,7 +183,7 @@ export default function TransactionsPage() {
                           {t.counterparty_name || t.merchant || "Transaction"}
                         </div>
                         <div className="text-[12px] text-ink-400 truncate">
-                          {t.description || railLabel(t.rail)}
+                          {t.fx ? `International FX · ${t.fx.beneficiary_country} · ${fmtFxMoney(Number(t.fx.source_amount), t.fx.source_currency)} → approx. ${fmtFxMoney(Number(t.fx.recipient_amount), t.fx.recipient_currency)} · rate ${Number(t.fx.fx_rate).toFixed(5)}` : (t.description || railLabel(t.rail))}
                           {t.reference ? ` · ${t.reference}` : ""}
                           {t.counterparty_iban ? ` · ${t.counterparty_iban}` : ""}
                         </div>
@@ -185,7 +196,7 @@ export default function TransactionsPage() {
                           )}
                         >
                           {t.direction === "credit" ? "+ " : "− "}
-                          {fmtMoney(Number(t.amount), t.currency)}
+                          {t.fx ? fmtFxMoney(Number(t.amount), t.currency) : fmtMoney(Number(t.amount), t.currency)}
                         </div>
                         <div className="text-[11px] font-bold capitalize uppercase tracking-wide" style={{
                           color:
@@ -194,7 +205,9 @@ export default function TransactionsPage() {
                             t.status === "reversed" || t.status === "failed" ? "#b91c1c" :
                             "#6b7785"
                         }}>
-                          {t.status === "posted" ? "Approved" :
+                          {t.fx?.status === "approved_pending_settlement" ? "Approved · awaiting settlement" :
+                           t.fx?.status === "pending_admin" ? "FX · pending review" :
+                           t.status === "posted" ? "Approved" :
                            t.status === "pending" ? "Pending" :
                            t.status === "reversed" ? "Rejected" :
                            t.status}

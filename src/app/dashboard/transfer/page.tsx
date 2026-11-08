@@ -38,7 +38,7 @@ const RAILS = [
     href: "/dashboard/transfer/international",
     Icon: Plane,
     title: "International (SWIFT)",
-    body: "Send money worldwide in 20+ currencies. Arrives in 1–3 business days.",
+    body: "Choose a destination, see the required bank details and preview a cross-currency amount before requesting a transfer.",
     badge: "Global",
   },
 ];
@@ -97,6 +97,22 @@ export default async function TransferPicker() {
           </Link>
         ))}
       </div>
+
+      {/* Quiet secondary entry point: keep this in Payments, not on the landing hero. */}
+      <details className="mt-7 rounded-xl border border-ink-100 bg-panel/70 px-4 py-3 group">
+        <summary className="cursor-pointer select-none text-[12.5px] font-semibold text-ink-600 hover:text-ink-900 focus-ring">
+          International transfer resources
+        </summary>
+        <div className="mt-3 border-t border-ink-100 pt-3 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-[13px] font-medium text-ink-800">Country requirements &amp; exchange rates</p>
+            <p className="text-[12px] text-ink-500 mt-1">Review destination banking details and a reference FX quote before making a request.</p>
+          </div>
+          <Link href="/dashboard/transfer/international" className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-brand-700 hover:underline focus-ring">
+            View guide <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      </details>
     </div>
   );
 }

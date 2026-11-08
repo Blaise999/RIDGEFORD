@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { fmtMoney, fmtRelativeDate, cx } from "@/lib/utils";
+import { fmtFxMoney } from "@/lib/fx-money";
 
 const TABS = [
   { id: "pending_admin", label: "Pending" },
@@ -30,7 +31,10 @@ export default function AdminTransfersPage() {
   }, [status]);
 
   async function approve(id: string) {
-    if (!confirm("Approve this transfer? Funds will move immediately.")) return;
+    const selected = rows?.find((transfer) => transfer.id === id);
+    if (!confirm(selected?.fx_quote_id
+      ? "Approve this FX request for processing? This will NOT debit funds or settle the payment."
+      : "Approve this transfer? Funds will move in the internal ledger immediately.")) return;
     setBusy(id);
     try {
       const r = await fetch(`/api/admin/transfers/${id}/approve`, { method: "POST" });
@@ -127,9 +131,16 @@ export default function AdminTransfersPage() {
                         {t.beneficiary_iban || t.beneficiary_email || "—"}
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-[12.5px] uppercase text-ink-500">{t.rail}</td>
+                    <td className="px-5 py-3 text-[12.5px] uppercase text-ink-500">
+                      {t.fx_quote_id ? "International FX" : t.rail}
+                      {t.fx_quote_id && <div className="text-[11px] normal-case">{t.beneficiary_country}</div>}
+                    </td>
                     <td className="px-5 py-3 text-[14px] font-bold text-ink-900 tabular-nums">
-                      {fmtMoney(Number(t.amount), t.currency)}
+                      {t.fx_quote_id ? <>
+                        <div>{fmtFxMoney(Number(t.source_amount), t.source_currency)} sent</div>
+                        <div className="text-[12px] text-ink-500 font-medium">≈ {fmtFxMoney(Number(t.recipient_amount), t.recipient_currency)} received</div>
+                        <div className="text-[10px] text-ink-400 font-normal">Reference FX rate {Number(t.fx_rate).toFixed(6)}</div>
+                      </> : fmtMoney(Number(t.amount), t.currency)}
                     </td>
                     <td className="px-5 py-3 text-[12.5px] text-ink-500">{fmtRelativeDate(t.created_at)}</td>
                     <td className="px-5 py-3 text-right">
@@ -141,7 +152,7 @@ export default function AdminTransfersPage() {
                             className="btn h-9 px-3 bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-60"
                           >
                             {busy === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                            Approve
+                            {t.fx_quote_id ? "Approve for processing" : "Approve"}
                           </button>
                           <button
                             disabled={busy === t.id}
@@ -171,12 +182,14 @@ function StatusPill({ s }: { s: string }) {
   const map: Record<string, string> = {
     pending_admin: "bg-amber-500/15 text-amber-300",
     completed: "bg-brand-500/10 text-brand-700",
+    approved_pending_settlement: "bg-amber-500/15 text-amber-700",
     rejected: "bg-red-500/15 text-red-300",
     canceled: "bg-ink-100 text-ink-700",
   };
   const label: Record<string, string> = {
     pending_admin: "Pending",
     completed: "Completed",
+    approved_pending_settlement: "Approved · not settled",
     rejected: "Rejected",
     canceled: "Canceled",
   };

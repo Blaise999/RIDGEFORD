@@ -1,3 +1,4 @@
+import { fmtFxMoney } from "@/lib/fx-money";
 import { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -65,8 +66,8 @@ export async function POST(
         sendTransferRejected(sender.email, {
           firstName: sender.first_name || "there",
           reference: transfer.reference_id,
-          amount: Number(transfer.amount),
-          currency: transfer.currency,
+          amount: Number(transfer.fx_quote_id ? transfer.source_amount : transfer.amount),
+          currency: transfer.fx_quote_id ? transfer.source_currency : transfer.currency,
           beneficiaryName: transfer.beneficiary_name,
           rail: transfer.rail,
           reason: reason || undefined,
@@ -77,9 +78,11 @@ export async function POST(
         transfer.user_id,
         "transfer_rejected",
         `Transfer ${transfer.reference_id} rejected`,
-        reason
-          ? `${fmtMoney(Number(transfer.amount), transfer.currency)} to ${transfer.beneficiary_name} — ${reason}`
-          : `${fmtMoney(Number(transfer.amount), transfer.currency)} to ${transfer.beneficiary_name} was not approved.`,
+        transfer.fx_quote_id
+          ? `${fmtFxMoney(Number(transfer.source_amount), transfer.source_currency)} → approximately ${fmtFxMoney(Number(transfer.recipient_amount), transfer.recipient_currency)} for ${transfer.beneficiary_name} was not approved.${reason ? ` Reason: ${reason}` : ""}`
+          : reason
+            ? `${fmtMoney(Number(transfer.amount), transfer.currency)} to ${transfer.beneficiary_name} — ${reason}`
+            : `${fmtMoney(Number(transfer.amount), transfer.currency)} to ${transfer.beneficiary_name} was not approved.`,
         { transfer_id: transfer.id, reference: transfer.reference_id, reason }
       );
     }

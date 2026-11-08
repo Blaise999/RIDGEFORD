@@ -6,6 +6,7 @@ import { sendTransferApproved, sendReceipt, deferEmail } from "@/lib/email";
 import { notify } from "@/lib/notify";
 import { fmtMoney } from "@/lib/utils";
 import { accountCurrency } from "@/lib/account-currency";
+import { fmtFxMoney } from "@/lib/fx-money";
 
 export async function POST(
   _req: NextRequest,
@@ -31,6 +32,28 @@ export async function POST(
       .single();
     if (!sender) return fail(404, "Sender not found");
     if (sender.blocked) return fail(403, "Sender account is suspended");
+
+    if (transfer.fx_quote_id) {
+      // A published reference exchange rate is not a settlement instruction.
+      // Do not debit or mark a cross-currency request "completed" without a
+      // genuine banking partner's settlement confirmation.
+      const { data: updated, error: statusError } = await sb.from("transfers")
+        .update({ status: "approved_pending_settlement", reviewed_at: new Date().toISOString(), reviewed_by: admin.id })
+        .eq("id", id).eq("status", "pending_admin").select("id").maybeSingle();
+      if (statusError || !updated) return fail(409, "This transfer has already been reviewed.");
+      await sb.from("admin_actions").insert({
+        admin_id: admin.id,
+        action: "approve_fx_request_for_processing",
+        target_type: "transfer",
+        target_id: id,
+        notes: "No debit or external settlement performed; reference FX quote only",
+      });
+      await notify(sender.id, "transfer_approved", `International FX request ${transfer.reference_id} reviewed`,
+        `${fmtFxMoney(Number(transfer.source_amount), String(transfer.source_currency))} → approximately ${fmtFxMoney(Number(transfer.recipient_amount), String(transfer.recipient_currency))} for ${transfer.beneficiary_name}. Approved for processing; funds have not yet been sent or debited.`,
+        { transfer_id: transfer.id, reference: transfer.reference_id, fx_rate: transfer.fx_rate, settlement: "not_settled" }
+      );
+      return ok({ status: "approved_pending_settlement", settled: false });
+    }
 
     // For SWIFT in non-EUR, re-convert at approval time so the debit matches.
     let amt = Number(transfer.amount);

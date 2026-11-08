@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { CheckCircle2, ArrowRight, Clock } from "lucide-react";
 import { fmtMoney, fmtDate } from "@/lib/utils";
+import { fmtFxMoney } from "@/lib/fx-money";
 
 export default function SuccessPage() {
   const sp = useSearchParams();
@@ -52,7 +53,7 @@ export default function SuccessPage() {
         transition={{ delay: 0.45 }}
         className="mt-2 text-center text-[14.5px] text-ink-500"
       >
-        Your transfer is now being reviewed. We'll email you the moment it's approved.
+        Your request is being reviewed. Cross-currency requests are not bank-settled until a payment provider confirms settlement.
       </motion.p>
 
       <motion.div
@@ -70,11 +71,18 @@ export default function SuccessPage() {
                 Amount
               </div>
               <div className="mt-1 text-[36px] font-bold text-ink-900 tabular-nums">
-                {fmtMoney(Number(t.amount), t.currency || "EUR")}
+                {t.fx_quote_id ? fmtFxMoney(Number(t.amount), t.currency) : fmtMoney(Number(t.amount), t.currency || "EUR")}
               </div>
             </div>
 
             <ul className="mt-6 space-y-2.5">
+              {t.fx_quote_id && <>
+                <Row k="Amount from your account" v={fmtFxMoney(Number(t.source_amount), t.source_currency)} />
+                <Row k="Expected recipient amount" v={`Approx. ${fmtFxMoney(Number(t.recipient_amount), t.recipient_currency)}`} />
+                <Row k="Reference conversion rate" v={`1 ${t.source_currency} = ${Number(t.fx_rate).toFixed(6)} ${t.recipient_currency}`} />
+                <Row k="Rate publication date" v={t.fx_rate_date} />
+                <Row k="Payment stage" v={t.status === "approved_pending_settlement" ? "Approved for processing · not settled" : t.status === "rejected" ? "Request rejected" : "Request received · awaiting review"} />
+              </>}
               <Row k="Reference" v={t.reference_id} />
               <Row k="To" v={t.beneficiary_name} />
               {t.beneficiary_iban && <Row k={t.beneficiary_country?.toUpperCase() === "US" || /^\d+$/.test(t.beneficiary_iban) ? "Account number" : "IBAN"} v={t.beneficiary_iban} />}

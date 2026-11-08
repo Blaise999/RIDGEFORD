@@ -30,7 +30,20 @@ export async function GET(req: NextRequest) {
 
     const { data, error } = await q;
     if (error) return fail(500, error.message);
-    return ok({ transactions: data || [] });
+    const transferIds = [...new Set((data || []).map((txn) => txn.transfer_id).filter(Boolean))];
+    let linked: Record<string, any> = {};
+    if (transferIds.length) {
+      const { data: transfers, error: txErr } = await sb.from("transfers")
+        .select("id,fx_quote_id,source_amount,source_currency,recipient_amount,recipient_currency,fx_rate,fx_rate_date,beneficiary_country,status")
+        .eq("user_id", u.id).in("id", transferIds);
+      if (txErr) return fail(500, txErr.message);
+      linked = Object.fromEntries((transfers || []).map((transfer) => [transfer.id, transfer]));
+    }
+    const enriched = (data || []).map((txn) => ({
+      ...txn,
+      fx: txn.transfer_id && linked[txn.transfer_id]?.fx_quote_id ? linked[txn.transfer_id] : null,
+    }));
+    return ok({ transactions: enriched });
   } catch (e) {
     return handleError(e);
   }

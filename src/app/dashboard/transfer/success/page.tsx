@@ -53,7 +53,7 @@ export default function SuccessPage() {
         transition={{ delay: 0.45 }}
         className="mt-2 text-center text-[14.5px] text-ink-500"
       >
-        Your request is being reviewed. Cross-currency requests are not bank-settled until a payment provider confirms settlement.
+        Check the status below. After approval, the amount is deducted from your account balance.
       </motion.p>
 
       <motion.div
@@ -81,7 +81,8 @@ export default function SuccessPage() {
                 <Row k="Expected recipient amount" v={`Approx. ${fmtFxMoney(Number(t.recipient_amount), t.recipient_currency)}`} />
                 <Row k="Reference conversion rate" v={`1 ${t.source_currency} = ${Number(t.fx_rate).toFixed(6)} ${t.recipient_currency}`} />
                 <Row k="Rate publication date" v={t.fx_rate_date} />
-                <Row k="Payment stage" v={t.status === "approved_pending_settlement" ? "Approved for processing · not settled" : t.status === "rejected" ? "Request rejected" : "Request received · awaiting review"} />
+                <Row k="Payment stage" v={t.status === "approved" ? "Approved · balance debited" : t.status === "approved_pending_settlement" ? "Approved for processing · balance not debited" : t.status === "rejected" ? "Request rejected" : "Awaiting review"} />
+                {t.status === "approved" && <Row k="External settlement" v="Not yet confirmed" />}
               </>}
               <Row k="Reference" v={t.reference_id} />
               <Row k="To" v={t.beneficiary_name} />
@@ -92,9 +93,9 @@ export default function SuccessPage() {
               <Row
                 k="Status"
                 v={
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-300 text-[11.5px] font-bold uppercase tracking-wide px-2 py-0.5">
-                    <Clock className="h-3 w-3" />
-                    Pending review
+                  <span className={`inline-flex items-center gap-1 rounded-full text-[11.5px] font-bold uppercase tracking-wide px-2 py-0.5 ${t.status === "approved" || t.status === "completed" ? "bg-green-500/15 text-green-700" : t.status === "rejected" ? "bg-red-500/15 text-red-700" : "bg-amber-500/15 text-amber-700"}`}>
+                    {t.status === "approved" || t.status === "completed" ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                    {t.status === "approved" ? "Approved" : t.status === "completed" ? "Completed" : t.status === "rejected" ? "Rejected" : "Pending review"}
                   </span>
                 }
               />

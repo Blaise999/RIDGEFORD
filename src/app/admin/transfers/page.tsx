@@ -7,6 +7,7 @@ import { fmtFxMoney } from "@/lib/fx-money";
 
 const TABS = [
   { id: "pending_admin", label: "Pending" },
+  { id: "approved", label: "Approved" },
   { id: "completed", label: "Completed" },
   { id: "rejected", label: "Rejected" },
   { id: "", label: "All" },
@@ -33,7 +34,7 @@ export default function AdminTransfersPage() {
   async function approve(id: string) {
     const selected = rows?.find((transfer) => transfer.id === id);
     if (!confirm(selected?.fx_quote_id
-      ? "Approve this FX request for processing? This will NOT debit funds or settle the payment."
+      ? "Approve this FX request and debit the sender’s account balance now? This does not confirm external settlement."
       : "Approve this transfer? Funds will move in the internal ledger immediately.")) return;
     setBusy(id);
     try {
@@ -152,7 +153,7 @@ export default function AdminTransfersPage() {
                             className="btn h-9 px-3 bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-60"
                           >
                             {busy === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                            {t.fx_quote_id ? "Approve for processing" : "Approve"}
+                            Approve
                           </button>
                           <button
                             disabled={busy === t.id}
@@ -182,6 +183,7 @@ function StatusPill({ s }: { s: string }) {
   const map: Record<string, string> = {
     pending_admin: "bg-amber-500/15 text-amber-300",
     completed: "bg-brand-500/10 text-brand-700",
+    approved: "bg-brand-500/10 text-brand-700",
     approved_pending_settlement: "bg-amber-500/15 text-amber-700",
     rejected: "bg-red-500/15 text-red-300",
     canceled: "bg-ink-100 text-ink-700",
@@ -189,6 +191,7 @@ function StatusPill({ s }: { s: string }) {
   const label: Record<string, string> = {
     pending_admin: "Pending",
     completed: "Completed",
+    approved: "Approved",
     approved_pending_settlement: "Approved · not settled",
     rejected: "Rejected",
     canceled: "Canceled",

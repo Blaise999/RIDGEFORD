@@ -41,11 +41,13 @@ export default function ReceiptPage({ params }: { params: Promise<{ ref: string 
   const status = t.status as string;
   const statusMap: Record<string, { Icon: any; label: string; bg: string; fg: string }> = {
     pending_admin: { Icon: Clock, label: "Pending review", bg: "bg-amber-500/15", fg: "text-amber-300" },
-    completed: { Icon: CheckCircle2, label: "Settled", bg: "bg-brand-500/10", fg: "text-brand-700" },
+    completed: { Icon: CheckCircle2, label: "Completed", bg: "bg-brand-500/10", fg: "text-brand-700" },
+    approved: { Icon: CheckCircle2, label: "Approved", bg: "bg-brand-500/10", fg: "text-brand-700" },
+    approved_pending_settlement: { Icon: Clock, label: "Approved for processing", bg: "bg-amber-500/15", fg: "text-amber-700" },
     rejected: { Icon: XCircle, label: "Rejected", bg: "bg-red-500/15", fg: "text-red-300" },
     canceled: { Icon: XCircle, label: "Canceled", bg: "bg-ink-100", fg: "text-ink-700" },
   };
-  const s = statusMap[status] || statusMap.completed;
+  const s = statusMap[status] || statusMap.pending_admin;
 
   function safePrint() {
     if (typeof window !== "undefined" && typeof window.print === "function") {
@@ -123,6 +125,12 @@ export default function ReceiptPage({ params }: { params: Promise<{ ref: string 
             <div className="text-[11.5px] font-semibold uppercase tracking-[0.14em] text-ink-500 mb-2">Metadata</div>
             {t.reference && <Row k="Reference" v={t.reference} />}
             {t.memo && <Row k="Note" v={t.memo} />}
+            {t.fx_quote_id && <>
+              <Row k="Amount debited" v={fmtMoney(Number(t.source_amount), t.source_currency)} />
+              <Row k="Estimated recipient amount" v={fmtMoney(Number(t.recipient_amount), t.recipient_currency)} />
+              <Row k="Reference exchange rate" v={`1 ${t.source_currency} = ${Number(t.fx_rate).toFixed(6)} ${t.recipient_currency}`} />
+              <Row k="External settlement" v="Not confirmed by payment provider" />
+            </>}
             {t.rejection_reason && <Row k="Rejection reason" v={t.rejection_reason} />}
           </div>
         </div>

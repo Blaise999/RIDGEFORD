@@ -205,7 +205,8 @@ export default function TransactionsPage() {
                             t.status === "reversed" || t.status === "failed" ? "#b91c1c" :
                             "#6b7785"
                         }}>
-                          {t.fx?.status === "approved_pending_settlement" ? "Approved · awaiting settlement" :
+                          {t.fx?.status === "approved" ? "Approved" :
+                           t.fx?.status === "approved_pending_settlement" ? "Approved · awaiting settlement" :
                            t.fx?.status === "pending_admin" ? "FX · pending review" :
                            t.status === "posted" ? "Approved" :
                            t.status === "pending" ? "Pending" :

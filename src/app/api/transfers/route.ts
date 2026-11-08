@@ -294,7 +294,7 @@ export async function POST(req: NextRequest) {
       "transfer_submitted",
       `Transfer ${transfer.reference_id} submitted`,
       fxQuote
-        ? `${fmtFxMoney(Number(fxQuote.source_amount), baseCurrency)} → approximately ${fmtFxMoney(Number(fxQuote.recipient_amount), fxQuote.recipient_currency)} to ${beneficiary_name}. FX request awaiting approval; not yet settled.`
+        ? `${fmtFxMoney(Number(fxQuote.source_amount), baseCurrency)} → approximately ${fmtFxMoney(Number(fxQuote.recipient_amount), fxQuote.recipient_currency)} to ${beneficiary_name}. FX transfer request pending admin approval.`
         : `${fmtMoney(amt, transfer.currency)} to ${beneficiary_name} — under review.`,
       { transfer_id: transfer.id, reference: transfer.reference_id, amount: amt, rail, account_type: accType,
         ...(fxQuote ? { source_currency: baseCurrency, recipient_currency: fxQuote.recipient_currency,

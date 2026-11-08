@@ -33,7 +33,26 @@ export async function POST(
       .eq("id", transfer.user_id)
       .single();
 
-    // Reverse the pending ledger row so it visibly shows as rejected
+    // FX approvals debit atomically in SQL. Claim the pending status before
+    // reversing its ledger entry so a simultaneous approval cannot debit a
+    // request that was already rejected (or vice versa).
+    if (transfer.fx_quote_id) {
+      const { data: rejected, error: rejectError } = await sb
+        .from("transfers")
+        .update({
+          status: "rejected",
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: admin.id,
+          rejection_reason: reason,
+        })
+        .eq("id", id)
+        .eq("status", "pending_admin")
+        .select("id")
+        .maybeSingle();
+      if (rejectError || !rejected) return fail(409, "Transfer already reviewed");
+    }
+
+    // Rejected transfers are never debited. Mark their pending ledger as reversed.
     await sb
       .from("transactions")
       .update({
@@ -43,15 +62,17 @@ export async function POST(
       .eq("transfer_id", transfer.id)
       .eq("status", "pending");
 
-    await sb
-      .from("transfers")
-      .update({
-        status: "rejected",
-        reviewed_at: new Date().toISOString(),
-        reviewed_by: admin.id,
-        rejection_reason: reason,
-      })
-      .eq("id", id);
+    if (!transfer.fx_quote_id) {
+      await sb
+        .from("transfers")
+        .update({
+          status: "rejected",
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: admin.id,
+          rejection_reason: reason,
+        })
+        .eq("id", id);
+    }
 
     await sb.from("admin_actions").insert({
       admin_id: admin.id,

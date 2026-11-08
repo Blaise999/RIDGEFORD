@@ -34,25 +34,35 @@ export async function POST(
     if (sender.blocked) return fail(403, "Sender account is suspended");
 
     if (transfer.fx_quote_id) {
-      // A published reference exchange rate is not a settlement instruction.
-      // Do not debit or mark a cross-currency request "completed" without a
-      // genuine banking partner's settlement confirmation.
-      const { data: updated, error: statusError } = await sb.from("transfers")
-        .update({ status: "approved_pending_settlement", reviewed_at: new Date().toISOString(), reviewed_by: admin.id })
-        .eq("id", id).eq("status", "pending_admin").select("id").maybeSingle();
-      if (statusError || !updated) return fail(409, "This transfer has already been reviewed.");
-      await sb.from("admin_actions").insert({
-        admin_id: admin.id,
-        action: "approve_fx_request_for_processing",
-        target_type: "transfer",
-        target_id: id,
-        notes: "No debit or external settlement performed; reference FX quote only",
-      });
-      await notify(sender.id, "transfer_approved", `International FX request ${transfer.reference_id} reviewed`,
-        `${fmtFxMoney(Number(transfer.source_amount), String(transfer.source_currency))} → approximately ${fmtFxMoney(Number(transfer.recipient_amount), String(transfer.recipient_currency))} for ${transfer.beneficiary_name}. Approved for processing; funds have not yet been sent or debited.`,
-        { transfer_id: transfer.id, reference: transfer.reference_id, fx_rate: transfer.fx_rate, settlement: "not_settled" }
+      // Atomic source-currency debit + pending-ledger posting + "approved" status.
+      // The database function locks both rows, so repeat approval cannot debit twice.
+      const { data: ledgerResult, error: ledgerError } = await sb.rpc(
+        "approve_fx_transfer_ledger",
+        { p_transfer_id: transfer.id, p_admin_id: admin.id }
       );
-      return ok({ status: "approved_pending_settlement", settled: false });
+      if (ledgerError) {
+        const message = ledgerError.message || "Unable to approve FX transfer";
+        const code = /already reviewed|conflict|outside your assigned/i.test(message) ? 409
+          : /insufficient|invalid|missing or duplicated|unpriced/i.test(message) ? 400 : 500;
+        return fail(code, message);
+      }
+
+      const sourceAmount = Number(transfer.source_amount);
+      const sourceCurrency = String(transfer.source_currency);
+      const recipientCurrency = String(transfer.recipient_currency);
+      await notify(
+        sender.id,
+        "transfer_approved",
+        `Transfer ${transfer.reference_id} approved`,
+        `${fmtFxMoney(sourceAmount, sourceCurrency)} debited from your ${transfer.account_type} balance. ` +
+        `Estimated recipient amount: ${fmtFxMoney(Number(transfer.recipient_amount), recipientCurrency)} ` +
+        `for ${transfer.beneficiary_name}. External bank settlement has not been confirmed.`,
+        { transfer_id: transfer.id, reference: transfer.reference_id, status: "approved",
+          source_amount: sourceAmount, source_currency: sourceCurrency,
+          recipient_amount: transfer.recipient_amount, recipient_currency: recipientCurrency,
+          externally_settled: false }
+      );
+      return ok({ ...(ledgerResult || {}), status: "approved", externally_settled: false });
     }
 
     // For SWIFT in non-EUR, re-convert at approval time so the debit matches.

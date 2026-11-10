@@ -99,7 +99,7 @@ export function SupportWidget() {
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Close support chat" : "Open support chat"}
         className={cx(
-          "fixed z-50 bottom-5 right-5 h-14 w-14 rounded-full grid place-items-center text-white shadow-2xl transition-transform hover:scale-105 active:scale-95",
+          "fixed z-[80] bottom-5 right-5 h-14 w-14 rounded-full grid place-items-center text-white shadow-2xl transition-transform hover:scale-105 active:scale-95",
           "bg-gradient-to-br from-brand-500 to-brand-600"
         )}
       >
@@ -117,7 +117,7 @@ export function SupportWidget() {
       {/* Panel */}
       {open && (
         <div
-          className="fixed z-50 bottom-24 right-5 w-[min(94vw,392px)] h-[min(72vh,560px)] flex flex-col rounded-2xl bg-panel shadow-2xl border border-ink-100 overflow-hidden"
+          className="fixed z-[80] bottom-24 right-5 w-[min(94vw,392px)] h-[min(72vh,560px)] flex flex-col rounded-2xl bg-panel shadow-2xl border border-ink-100 overflow-hidden"
           role="dialog"
           aria-label="Support chat"
         >

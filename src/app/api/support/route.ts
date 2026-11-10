@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/auth";
+import { requireSupportUser } from "@/lib/auth";
 import { ok, handleError } from "@/lib/http";
 import {
   getOrCreateConversation,
@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(req: Request) {
   try {
-    const user = await requireUser();
+    const user = await requireSupportUser();
     const url = new URL(req.url);
     const after = url.searchParams.get("after") || undefined;
 

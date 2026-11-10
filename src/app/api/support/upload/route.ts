@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireUser } from "@/lib/auth";
+import { requireSupportUser } from "@/lib/auth";
 import { ok, fail, handleError } from "@/lib/http";
 import { uploadSupportImage } from "@/lib/support";
 
@@ -15,7 +15,7 @@ export const maxDuration = 30;
  */
 export async function POST(req: NextRequest) {
   try {
-    const user = await requireUser();
+    const user = await requireSupportUser();
 
     const form = await req.formData();
     const file = form.get("file");

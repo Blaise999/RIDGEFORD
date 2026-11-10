@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/auth";
+import { requireSupportUser } from "@/lib/auth";
 import { ok, fail, handleError } from "@/lib/http";
 import { postMessage } from "@/lib/support";
 
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(req: Request) {
   try {
-    const user = await requireUser();
+    const user = await requireSupportUser();
     const json = await req.json().catch(() => ({}));
     const body = typeof json?.body === "string" ? json.body : "";
     const imageUrl =

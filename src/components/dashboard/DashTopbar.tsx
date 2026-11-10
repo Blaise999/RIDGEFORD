@@ -109,6 +109,7 @@ export function DashTopbar({ user }: { user: SessionUser }) {
             "/dashboard/spaces",
             "/dashboard/cards",
             "/dashboard/settings",
+            "/dashboard/support",
           ].map((href) => (
             <Link
               key={href}

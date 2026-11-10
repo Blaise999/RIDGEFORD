@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, ArrowUpRight, Headset } from "lucide-react";
+import Link from "next/link";
 
 /** A persistent, inline warning. Never obscures the dashboard or account history. */
 export function FlaggedBanner({
@@ -33,15 +34,14 @@ export function FlaggedBanner({
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => window.dispatchEvent(new Event("ridgeford:open-support"))}
+          <Link
+            href="/dashboard/support"
             className="btn btn-primary inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-[13px]"
           >
             <Headset aria-hidden="true" className="h-4 w-4" />
             Message support
             <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
-          </button>
+          </Link>
         </div>
       </div>
     </section>

@@ -6,7 +6,6 @@ import { DashSidebar } from "@/components/dashboard/DashSidebar";
 import { DashTopbar } from "@/components/dashboard/DashTopbar";
 import { FlaggedBanner } from "@/components/dashboard/FlaggedBanner";
 import { BlockStatusWatcher } from "@/components/dashboard/BlockStatusWatcher";
-import { BlockedActionGuard } from "@/components/dashboard/BlockedActionGuard";
 import { SupportWidget } from "@/components/support/SupportWidget";
 
 // The dashboard is always per-user and reads the session cookie. Without
@@ -60,7 +59,6 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-ink-50">
       <BlockStatusWatcher initialBlocked={user.blocked} />
-      {user.blocked && <BlockedActionGuard />}
       <DashSidebar />
       <div className="lg:pl-64">
         <DashTopbar user={user} />

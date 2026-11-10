@@ -106,8 +106,8 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
 }
 
 /**
- * A narrow exception for support chat. Suspended customers must be able to
- * view, send and upload support messages while everything else is locked.
+ * A narrow exception for support chat. Restricted customers must be able to
+ * view, send and upload support messages even when banking actions are disabled.
  */
 export async function requireSupportUser() {
   const u = await getCurrentUser();

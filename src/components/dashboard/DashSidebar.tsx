@@ -11,6 +11,7 @@ import {
   Wallet,
   Bitcoin,
   Settings,
+  Headset,
   LogOut,
 } from "lucide-react";
 import { cx } from "@/lib/utils";
@@ -23,6 +24,7 @@ const NAV = [
   { href: "/dashboard/vault", label: "Vault", Icon: Wallet },
   { href: "/dashboard/cards", label: "Cards", Icon: CreditCard },
   { href: "/dashboard/settings", label: "Settings", Icon: Settings },
+  { href: "/dashboard/support", label: "Support", Icon: Headset },
 ];
 
 export function DashSidebar() {

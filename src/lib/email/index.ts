@@ -98,10 +98,10 @@ export async function sendTransferRejected(to: string, p: TransferEmailPayload &
   return send(to, `Transfer ${p.reference} rejected`, transferRejectedTemplate(p));
 }
 export async function sendAccountBlocked(to: string, firstName: string, reason?: string) {
-  return send(to, "Your Ridgeford Capital Bank account has been suspended", accountBlockedTemplate({ firstName, reason }));
+  return send(to, "Ridgeford account notice: access restricted", accountBlockedTemplate({ firstName, reason }));
 }
 export async function sendAccountUnblocked(to: string, firstName: string) {
-  return send(to, "Your Ridgeford Capital Bank account is active again", accountUnblockedTemplate({ firstName }));
+  return send(to, "Ridgeford account notice: access restored", accountUnblockedTemplate({ firstName }));
 }
 export async function sendReceipt(to: string, p: ReceiptPayload) {
   return send(to, `Receipt — ${p.reference}`, receiptTemplate(p));

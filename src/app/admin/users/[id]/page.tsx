@@ -33,6 +33,11 @@ export default function AdminUserDetail({
   );
   const [showSeed, setShowSeed] = useState(false);
   const [showInject, setShowInject] = useState(false);
+  const [showBlockDialog, setShowBlockDialog] = useState(false);
+  const [showUnblockDialog, setShowUnblockDialog] = useState(false);
+  const [blockReason, setBlockReason] = useState("");
+  const [blockError, setBlockError] = useState("");
+  const [blockActionError, setBlockActionError] = useState("");
 
   async function load() {
     const r = await fetch(`/api/admin/users/${id}`, { cache: "no-store" });
@@ -46,31 +51,43 @@ export default function AdminUserDetail({
 
   async function toggleBlock() {
     const u = data?.user;
-    if (!u) return;
-
-    const block = !u.blocked;
-    let reason: string | null = null;
-
-    if (block) {
-      reason = prompt(
-        "Reason for suspending this account (shown in email):",
-        "Suspicious activity"
-      );
-      if (reason === null) return;
+    if (!u || busy) return;
+    setBlockActionError("");
+    if (!u.blocked) {
+      setBlockReason("");
+      setBlockError("");
+      setShowBlockDialog(true);
+      return;
     }
+    setShowUnblockDialog(true);
+  }
 
+  async function saveBlock(block: boolean) {
+    const u = data?.user;
+    if (!u || busy) return;
+    const reason = blockReason.trim();
+    if (block && (reason.length < 8 || reason.length > 500)) {
+      setBlockError("Write a clear reason between 8 and 500 characters.");
+      return;
+    }
     setBusy(true);
+    setBlockError("");
     try {
       const r = await fetch(`/api/admin/users/${u.id}/block`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ block, reason }),
+        body: JSON.stringify({ block, reason: block ? reason : null }),
       });
       const d = await r.json();
-      if (!r.ok || !d.ok) throw new Error(d.error || "Failed");
+      if (!r.ok || !d.ok) throw new Error(d.error || "Unable to update access");
+      setShowBlockDialog(false);
+      setShowUnblockDialog(false);
+      setBlockReason("");
       await load();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed");
+      const message = e instanceof Error ? e.message : "Unable to update access";
+      if (block) setBlockError(message);
+      else setBlockActionError(message);
     } finally {
       setBusy(false);
     }
@@ -143,6 +160,67 @@ export default function AdminUserDetail({
           </button>
         </div>
       </div>
+
+      {blockActionError && <p role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">{blockActionError}</p>}
+
+      {showBlockDialog && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/65 p-4" role="presentation">
+          <div role="dialog" aria-modal="true" aria-labelledby="block-dialog-title" className="w-full max-w-lg rounded-2xl border border-ink-200 bg-panel p-6 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-red-500/10 text-red-400"><Ban className="h-5 w-5" /></div>
+              <div>
+                <h2 id="block-dialog-title" className="text-lg font-bold text-ink-900">Restrict account access</h2>
+                <p className="mt-1 text-sm text-ink-500">{name} will be able to sign in and message support only. All other account activity will be unavailable until you unblock them.</p>
+              </div>
+            </div>
+            <label htmlFor="block-reason" className="mt-5 block text-[13px] font-semibold text-ink-800">Reason shown to customer</label>
+            <textarea
+              id="block-reason"
+              autoFocus
+              maxLength={500}
+              rows={4}
+              value={blockReason}
+              onChange={(e) => { setBlockReason(e.target.value); setBlockError(""); }}
+              placeholder="Explain why account access has been restricted and how to contact support…"
+              className="mt-2 w-full resize-y rounded-xl border border-ink-200 bg-ink-50 px-3 py-3 text-sm text-ink-900 outline-none focus:border-brand-500"
+            />
+            <div className="mt-1 flex items-center justify-between text-xs text-ink-400">
+              <span>Visible on the blocked screen, email and notification.</span>
+              <span>{blockReason.length}/500</span>
+            </div>
+            {blockError && <p role="alert" className="mt-3 text-sm text-red-400">{blockError}</p>}
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" disabled={busy} onClick={() => setShowBlockDialog(false)} className="btn btn-ghost">Cancel</button>
+              <button type="button" disabled={busy || blockReason.trim().length < 8} onClick={() => saveBlock(true)} className="btn bg-red-600 text-white hover:bg-red-700">
+                {busy && <Loader2 className="h-4 w-4 animate-spin" />} Block account
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showUnblockDialog && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/65 p-4" role="presentation">
+          <div role="dialog" aria-modal="true" aria-labelledby="unblock-dialog-title" className="w-full max-w-lg rounded-2xl border border-ink-200 bg-panel p-6 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-500/10 text-brand-700"><CheckCircle2 className="h-5 w-5" /></div>
+              <div>
+                <h2 id="unblock-dialog-title" className="text-lg font-bold text-ink-900">Restore account access</h2>
+                <p className="mt-1 text-sm leading-relaxed text-ink-500">
+                  Restore banking access for {name}? Transfers, account pages and other services will become available again. The customer will receive an access-restored email and notification.
+                </p>
+              </div>
+            </div>
+            {blockActionError && <p role="alert" className="mt-4 text-sm text-red-400">{blockActionError}</p>}
+            <div className="mt-6 flex justify-end gap-2">
+              <button type="button" disabled={busy} onClick={() => setShowUnblockDialog(false)} className="btn btn-ghost">Cancel</button>
+              <button type="button" disabled={busy} onClick={() => saveBlock(false)} className="btn bg-brand-500 text-white hover:bg-brand-600">
+                {busy && <Loader2 className="h-4 w-4 animate-spin" />} Restore access
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {u.blocked && u.blocked_reason && (
         <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4">

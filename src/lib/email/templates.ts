@@ -92,14 +92,14 @@ const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" wi
  *
  * Email clients want a PNG at an absolute https URL. /public already has the
  * mark rendered at every size, so the masthead now points at the 192px one.
- * NEXT_PUBLIC_APP_URL must be set to your real domain in production, or the
- * image resolves against localhost and breaks for everyone but you.
+ * NEXT_PUBLIC_APP_URL (or APP_URL) should be set to the canonical site domain.
+ * In production, the public site domain is used as a fallback rather than localhost.
  */
 function assetBase() {
   const raw =
     process.env.NEXT_PUBLIC_APP_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
-    "http://localhost:3000";
+    process.env.APP_URL ||
+    (process.env.NODE_ENV === "production" ? "https://ridgefordbank.com" : "http://localhost:3000");
   return raw.replace(/\/+$/, "");
 }
 
@@ -159,7 +159,7 @@ function shell({
 <meta name="supported-color-schemes" content="light"/>
 <title>Ridgeford Capital Bank</title>
 </head>
-<body style="margin:0;padding:0;background:${BRAND.bg};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:${BRAND.ink900};-webkit-font-smoothing:antialiased;">
+<body style="margin:0;padding:0;background:${BRAND.bg};font-family:Arial,Helvetica,sans-serif;color:${BRAND.ink900};-webkit-font-smoothing:antialiased;">
 <div style="display:none;visibility:hidden;opacity:0;height:0;width:0;overflow:hidden;mso-hide:all;">${escape(preheader)}</div>
 
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:${BRAND.bg};">
@@ -171,7 +171,7 @@ function shell({
       <!-- Masthead: the one dark band in the message, so the mark reads the
            way it does everywhere else. Table-based and inline-styled, because
            Outlook renders neither flexbox nor a stylesheet. -->
-      <tr><td style="background:${BRAND.masthead};padding:22px 32px;">
+      <tr><td style="background:${BRAND.masthead};padding:26px 32px;">
         <table role="presentation" cellspacing="0" cellpadding="0" border="0">
           <tr>
             <td style="padding-right:13px;vertical-align:middle;">
@@ -180,7 +180,7 @@ function shell({
             </td>
             <td style="vertical-align:middle;">
               <div style="font-family:Georgia,'Times New Roman',serif;font-weight:700;font-size:21px;letter-spacing:0.055em;color:#ffffff;line-height:1;">RIDGEFORD</div>
-              <div style="margin-top:6px;font-size:9.5px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:${BRAND.brand};line-height:1;">The foundation of European wealth</div>
+              <div style="margin-top:7px;font-size:10px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:${BRAND.brand};line-height:1.3;">Banking across borders</div>
             </td>
           </tr>
         </table>
@@ -189,18 +189,18 @@ function shell({
       ${accentBar}
 
       <!-- Body -->
-      <tr><td style="padding:24px 32px 8px 32px;">${inner}</td></tr>
+      <tr><td style="padding:32px 32px 18px 32px;">${inner}</td></tr>
 
       <!-- Footer -->
       <tr><td style="padding:24px 32px 28px 32px;border-top:1px solid ${BRAND.ink100};">
         <p style="margin:0 0 6px 0;font-size:12px;line-height:18px;color:${BRAND.ink500};">
-          <strong style="color:${BRAND.ink700};">Ridgeford Capital Bank</strong> — Stamford, Connecticut, USA
+          <strong style="color:${BRAND.ink700};">Ridgeford Capital Bank</strong> — Frankfurt am Main · Stamford, Connecticut
         </p>
         <p style="margin:0 0 10px 0;font-size:12px;line-height:18px;color:${BRAND.ink500};">
           Account and payment services depend on the applicable licensed banking partner.
         </p>
         <p style="margin:0;font-size:11.5px;line-height:17px;color:${BRAND.ink400};">
-          This is a transactional notification from Ridgeford Capital Bank. If you didn't expect it, please contact <a href="mailto:support@ridgefordbank.eu" style="color:${BRAND.ink500};text-decoration:underline;">support@ridgefordbank.eu</a>.
+          This message concerns your Ridgeford account. If you didn't expect it, please contact <a href="mailto:support@ridgefordbank.eu" style="color:${BRAND.ink500};text-decoration:underline;">support@ridgefordbank.eu</a>.
         </p>
       </td></tr>
 
@@ -216,7 +216,7 @@ function shell({
 /* -------------------------- pieces --------------------------------------- */
 
 function h1(t: string) {
-  return `<h1 style="margin:0 0 8px 0;font-size:22px;font-weight:700;letter-spacing:-0.015em;color:${BRAND.ink900};line-height:1.25;">${t}</h1>`;
+  return `<h1 style="margin:0 0 8px 0;font-size:26px;font-weight:700;letter-spacing:-0.025em;color:${BRAND.ink900};line-height:1.25;">${t}</h1>`;
 }
 function p(t: string) {
   return `<p style="margin:0 0 14px 0;font-size:15px;line-height:1.55;color:${BRAND.ink700};">${t}</p>`;
@@ -238,6 +238,14 @@ function amountBlock(amount: number, currency: string, sublabel?: string) {
       ${sublabel ? `<div style="margin-top:4px;font-size:12.5px;color:${BRAND.ink500};">${escape(sublabel)}</div>` : ""}
     </td></tr>
   </table>`;
+}
+
+/** High-contrast email CTA; all styling is inline for Gmail / Outlook. */
+function emailAction(label: string, url: string, emphasis: "primary" | "outline" = "primary") {
+  const dark = emphasis === "primary";
+  return `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:22px 0 20px 0;"><tr><td style="background:${dark ? BRAND.masthead : BRAND.white};border:1px solid ${BRAND.masthead};border-radius:8px;">
+    <a href="${escape(url)}" style="display:inline-block;padding:14px 22px;color:${dark ? BRAND.white : BRAND.ink900};text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;line-height:1.3;">${escape(label)}</a>
+  </td></tr></table>`;
 }
 
 /** Detail card — k/v rows with nice spacing & dividers. */
@@ -280,7 +288,7 @@ export function transferSubmittedTemplate(p_: TransferEmailPayload) {
     inner: `
     ${eyebrow("Transfer submitted")}
     ${h1("We've received your transfer")}
-    ${p(`Hi ${escape(p_.firstName)}, your ${escape(railLabel(p_.rail))} of <strong>${escape(fmt(p_.amount, p_.currency))}</strong> to <strong>${escape(p_.beneficiaryName)}</strong> is now under review by our compliance team.`)}
+    ${p(`Hi ${escape(p_.firstName)}, your ${escape(railLabel(p_.rail))} of <strong>${escape(fmt(p_.amount, p_.currency))}</strong> to <strong>${escape(p_.beneficiaryName)}</strong> has been received and is under review.`)}
     ${amountBlock(p_.amount, p_.currency, `to ${p_.beneficiaryName}`)}
     ${card([
       ["Reference", p_.reference],
@@ -344,31 +352,35 @@ export function transferRejectedTemplate(p_: TransferEmailPayload) {
 /* -------------------------- ACCOUNT STATE -------------------------------- */
 
 export function accountBlockedTemplate({ firstName, reason }: { firstName: string; reason?: string }) {
-  const reasonRows = reason ? card([["Reason", reason]]) : "";
   return shell({
-    accent: { color: BRAND.redFg, label: "Suspended" },
+    accent: { color: BRAND.redFg, label: "Restricted" },
     inner: `
-    ${eyebrow("Account suspended", BRAND.redFg)}
-    ${h1("Your account has been suspended")}
-    ${p(`Hi ${escape(firstName)}, your Ridgeford Capital Bank account has been temporarily suspended by our compliance team. Until this is resolved you won't be able to initiate transfers or use your card.`)}
-    ${reasonRows}
-    ${p("Please contact <a href=\"mailto:support@ridgefordbank.eu\" style=\"color:" + BRAND.blueFg + ";text-decoration:underline;\">support@ridgefordbank.eu</a> as soon as possible so we can review your case together.")}
-    <p style="margin:6px 0 0 0;">${badge("Account suspended", BRAND.redBg, BRAND.redFg)}</p>
+    ${eyebrow("Account notice · Action may be required", BRAND.redFg)}
+    ${h1("Your account access is restricted")}
+    ${p(`Hello ${escape(firstName || "there")}, access to your Ridgeford account is temporarily restricted. You can still sign in and message support; other account services will remain unavailable until access is restored.`)}
+    ${card([["Account status", "Access restricted"], ["Reason", reason?.trim() || "Please contact Ridgeford Support for more information."]])}
+    ${p("If you have questions or would like to request a review, sign in and select <strong>Message support</strong> on the account notice screen.")}
+    ${emailAction("View account notice", `${assetBase()}/dashboard`)}
+    ${muted("For your security, never share a sign-in code or password in a support message.")}
+    <p style="margin:6px 0 0 0;">${badge("Access restricted", BRAND.redBg, BRAND.redFg)}</p>
     `,
-    preheader: "Your Ridgeford Capital Bank account has been suspended.",
+    preheader: "Your Ridgeford account access is restricted. Support messaging remains available.",
   });
 }
 
 export function accountUnblockedTemplate({ firstName }: { firstName: string }) {
   return shell({
-    accent: { color: BRAND.green, label: "Active" },
+    accent: { color: BRAND.green, label: "Restored" },
     inner: `
-    ${eyebrow("Account active", BRAND.greenFg)}
-    ${h1("Your account is active again")}
-    ${p(`Good news, ${escape(firstName)} — the suspension on your Ridgeford Capital Bank account has been lifted. You can sign in, transfer money and use your card as normal.`)}
-    <p style="margin:6px 0 0 0;">${badge("Active", BRAND.greenBg, BRAND.greenFg)}</p>
+    ${eyebrow("Account update", BRAND.greenFg)}
+    ${h1("Your account access has been restored")}
+    ${p(`Hello ${escape(firstName || "there")}, the restriction on your Ridgeford account has been removed. You can now sign in and use your available banking features again.`)}
+    ${card([["Account status", "Active"], ["Access", "Restored"]])}
+    ${emailAction("Return to your account", `${assetBase()}/login`)}
+    ${muted("If this update is unexpected, contact Ridgeford Support using the details in this message.")}
+    <p style="margin:6px 0 0 0;">${badge("Access restored", BRAND.greenBg, BRAND.greenFg)}</p>
     `,
-    preheader: "Your Ridgeford Capital Bank account is active again.",
+    preheader: "Your Ridgeford account restriction has been removed. Access is restored.",
   });
 }
 
@@ -478,7 +490,7 @@ export function onboardingRejectedTemplate({ firstName, reason }: { firstName: s
     ${h1("We couldn't approve your application")}
     ${p(`Hi ${escape(firstName)}, after reviewing your application we're unable to open a Ridgeford Capital Bank account for you at this time.`)}
     ${reasonRows}
-    ${p("If you believe this is a mistake or you'd like us to reconsider with updated information, please contact our compliance team at <a href=\"mailto:support@ridgefordbank.eu\" style=\"color:" + BRAND.blueFg + ";text-decoration:underline;\">support@ridgefordbank.eu</a>.")}
+    ${p("If you believe this is a mistake or you'd like us to reconsider with updated information, please contact Ridgeford Support at <a href=\"mailto:support@ridgefordbank.eu\" style=\"color:" + BRAND.blueFg + ";text-decoration:underline;\">support@ridgefordbank.eu</a>.")}
     <p style="margin:6px 0 0 0;">${badge("Not approved", BRAND.redBg, BRAND.redFg)}</p>
     `,
     preheader: "Your Ridgeford Capital Bank application was not approved.",

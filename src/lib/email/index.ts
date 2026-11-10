@@ -11,6 +11,7 @@ import {
   onboardingApprovedTemplate,
   onboardingRejectedTemplate,
   transactionPostedTemplate,
+  customerMessageTemplate,
   type TransferEmailPayload,
   type ReceiptPayload,
   type TransactionPostedPayload,
@@ -134,4 +135,38 @@ export async function sendTransactionPosted(to: string, p: TransactionPostedPayl
       ? `You received ${p.amountFmt}`
       : `${p.amountFmt} debited from your account`;
   return send(to, subject, transactionPostedTemplate(p));
+}
+
+
+/** Send a one-off email to a verified customer address resolved server-side.
+ * Unlike development-mode transactional notices, this requires a configured
+ * mail transport and only reports success after the provider accepts it. */
+export async function sendCustomerMessage(
+  to: string,
+  firstName: string,
+  subject: string,
+  message: string
+): Promise<{ ok: boolean; id?: string; error?: string }> {
+  const resend = getResend();
+  const configuredFrom = process.env.MAIL_FROM?.trim() || "";
+  const match = configuredFrom.match(/<([^<>\s]+@[^<>\s]+)>$/) || configuredFrom.match(/^([^\s<>]+@[^\s<>]+)$/);
+  const from = match ? `Ridgeford Support Team <${match[1]}>` : null;
+  if (!resend || !from) {
+    return { ok: false, error: "Configure RESEND_API_KEY and MAIL_FROM before sending customer emails." };
+  }
+  try {
+    const result = await resend.emails.send({
+      from,
+      to,
+      subject,
+      html: customerMessageTemplate({ firstName, subject, message }),
+      text: `Hello ${firstName || "there"},\n\n${message.trim()}\n\nRidgeford Support Team`,
+    });
+    if (result.error || !result.data?.id) {
+      return { ok: false, error: result.error?.message || "The email provider did not accept this message." };
+    }
+    return { ok: true, id: result.data.id };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unable to send email." };
+  }
 }

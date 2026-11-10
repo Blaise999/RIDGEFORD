@@ -630,3 +630,30 @@ export function transactionPostedTemplate(p_: TransactionPostedPayload) {
       : `${p_.amountFmt} debited${p_.counterparty ? ` — ${p_.counterparty}` : ""}.`,
   });
 }
+
+
+/* --------------------- MANUAL CUSTOMER COMMUNICATION --------------------- */
+
+/** Staff-authored plain text, escaped before insertion into the existing
+ * Ridgeford transactional email design. No user-authored HTML is interpreted. */
+export function customerMessageTemplate({
+  firstName,
+  subject,
+  message,
+}: {
+  firstName: string;
+  subject: string;
+  message: string;
+}) {
+  const lines = escape(message.trim()).replace(/\r\n?/g, "\n").replace(/\n/g, "<br />");
+  return shell({
+    preheader: subject,
+    inner: `
+      ${eyebrow("Account correspondence")}
+      ${h1(escape(subject))}
+      ${p(`Hello ${escape(firstName || "there")},`)}
+      <div style="margin:0 0 24px 0;font-size:15px;line-height:1.75;color:${BRAND.ink700};overflow-wrap:anywhere;">${lines}</div>
+      ${muted("For questions about this message, contact Ridgeford Support Team using the secure support chat in your account.")}
+    `,
+  });
+}

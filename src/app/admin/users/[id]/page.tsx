@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
+  Mail,
   Ban,
   CheckCircle2,
   Loader2,
@@ -138,6 +139,13 @@ export default function AdminUserDetail({
           >
             {u.blocked ? "Blocked" : "Active"}
           </span>
+
+          <Link
+            href={`/admin/emails?userId=${encodeURIComponent(id)}`}
+            className="btn h-10 border border-ink-200 bg-ink-50 text-ink-900 hover:bg-ink-100"
+          >
+            <Mail className="h-4 w-4" /> Email customer
+          </Link>
 
           <button
             onClick={toggleBlock}

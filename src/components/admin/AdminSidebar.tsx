@@ -11,6 +11,7 @@ import {
   LogOut,
   ShieldCheck,
   MessageSquare,
+  Mail,
   Bitcoin,
   FileCheck2,
 } from "lucide-react";
@@ -27,6 +28,7 @@ const NAV = [
   { href: "/admin/transfers", label: "Transfers", Icon: ArrowLeftRight },
   { href: "/admin/transactions", label: "Transactions", Icon: Receipt },
   { href: "/admin/support", label: "Support", Icon: MessageSquare },
+  { href: "/admin/emails", label: "Send email", Icon: Mail },
 ];
 
 export function AdminSidebar() {

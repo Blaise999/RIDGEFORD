@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server";
-import { requireUser } from "@/lib/auth";
+import { requireViewingUser } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { ok, fail, handleError } from "@/lib/http";
 
 export async function GET(req: NextRequest) {
   try {
-    const u = await requireUser();
+    const u = await requireViewingUser();
     const url = new URL(req.url);
     const dir = url.searchParams.get("direction");     // 'sent' | 'received'
     const account = url.searchParams.get("account");   // 'checking' | 'savings' | 'all'

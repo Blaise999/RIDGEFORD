@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server";
-import { requireActiveUser } from "@/lib/auth";
+import { requireActiveUser, requireViewingUser } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { ok, fail, handleError } from "@/lib/http";
 
 export async function GET() {
   try {
-    const u = await requireActiveUser();
+    const u = await requireViewingUser();
     const sb = supabaseAdmin();
 
     const { data, error } = await sb

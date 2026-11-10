@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireUser } from "@/lib/auth";
+import { requireUser, requireViewingUser } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { ok, fail, handleError } from "@/lib/http";
 import { notify } from "@/lib/notify";
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 /** GET /api/kyc — the customer's draft application + uploaded documents. */
 export async function GET() {
   try {
-    const u = await requireUser();
+    const u = await requireViewingUser();
     const sb = supabaseAdmin();
 
     const [{ data: app }, { data: docs }, { data: me }] = await Promise.all([

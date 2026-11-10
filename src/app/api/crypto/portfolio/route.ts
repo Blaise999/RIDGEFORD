@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/auth";
+import { requireViewingUser } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getMarkets, logoFor } from "@/lib/crypto";
 import { ok, handleError } from "@/lib/http";
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
  */
 export async function GET() {
   try {
-    const u = await requireUser();
+    const u = await requireViewingUser();
     const sb = supabaseAdmin();
 
     const [{ data: holdings }, markets, { data: pending }] = await Promise.all([

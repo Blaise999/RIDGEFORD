@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireUser } from "@/lib/auth";
+import { requireViewingUser } from "@/lib/auth";
 import { getChart, getMarket } from "@/lib/crypto";
 import { ok, fail, handleError } from "@/lib/http";
 
@@ -10,7 +10,7 @@ const RANGES: Record<string, number> = { "1": 1, "7": 7, "30": 30, "90": 90, "36
 /** GET /api/crypto/chart?id=bitcoin&days=7 */
 export async function GET(req: NextRequest) {
   try {
-    await requireUser();
+    await requireViewingUser();
     const id = req.nextUrl.searchParams.get("id") || "";
     const daysParam = req.nextUrl.searchParams.get("days") || "7";
     if (!id) return fail(400, "Missing asset id");

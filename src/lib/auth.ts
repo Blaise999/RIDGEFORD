@@ -105,37 +105,48 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   };
 }
 
-/** Require a user session; throws 401-style object when missing. */
-export async function requireUser() {
+/**
+ * A narrow exception for support chat. Suspended customers must be able to
+ * view, send and upload support messages while everything else is locked.
+ */
+export async function requireSupportUser() {
   const u = await getCurrentUser();
-
-  if (!u) {
-    throw new AuthError(401, "Not authenticated");
-  }
-
+  if (!u) throw new AuthError(401, "Not authenticated");
+  if (u.role !== "user") throw new AuthError(403, "Customer only");
   return u;
 }
 
 /**
- * Require an active (non-blocked) user session.
- * Use this on every route that mutates the user's state — transfers, etc.
+ * Viewing-only authentication for read-only GET handlers.
+ * A restriction does not hide a customer's own balances, transactions,
+ * cards, or history. Never use this helper for mutating endpoints.
  */
-export async function requireActiveUser() {
-  const u = await requireUser();
+export async function requireViewingUser() {
+  return requireSupportUser();
+}
 
+/**
+ * Require an active session for customer mutations.
+ * All payment and account-changing endpoints must use this, not
+ * requireViewingUser. The database blocked flag is checked per request.
+ */
+export async function requireUser() {
+  const u = await requireSupportUser();
   if (u.blocked) {
-    throw new AuthError(
-      403,
-      "This account has been flagged. Please contact support at support@ridgefordbank.eu for assistance."
-    );
+    throw new AuthError(403, "Account restricted. Viewing is available, but banking actions are disabled. Please contact Ridgeford Support Team.");
   }
-
   return u;
+}
+
+/** Active and normal account sessions share the same protection. */
+export async function requireActiveUser() {
+  return requireUser();
 }
 
 /** Require admin. */
 export async function requireAdmin() {
-  const u = await requireUser();
+  const u = await getCurrentUser();
+  if (!u) throw new AuthError(401, "Not authenticated");
 
   // All admins, including root, may enter the console. Individual API routes
   // restrict access to customers owned by the current admin's desk.

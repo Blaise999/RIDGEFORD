@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server";
-import { requireUser } from "@/lib/auth";
+import { requireUser, requireViewingUser } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { ok, fail, handleError } from "@/lib/http";
 
 export async function GET(req: NextRequest) {
   try {
-    const u = await requireUser();
+    const u = await requireViewingUser();
     const url = new URL(req.url);
     const unreadOnly = url.searchParams.get("unread") === "1";
     const limit = Math.min(Number(url.searchParams.get("limit") || 50), 200);

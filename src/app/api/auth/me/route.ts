@@ -9,7 +9,7 @@ export async function GET() {
     const sb = supabaseAdmin();
     const { data, error } = await sb
       .from("users")
-      .select("id,email,role,first_name,last_name,phone,iban,account_number,routing_number,bic,card_last4,balance_checking,balance_savings,blocked,blocked_reason,avatar_url,currency,country,created_at")
+      .select("id,email,role,first_name,last_name,phone,iban,account_number,internal_usd_reference,routing_number,bic,card_last4,balance_checking,balance_savings,blocked,blocked_reason,blocked_at,avatar_url,currency,country,created_at")
       .eq("id", session.id)
       .single();
     if (error || !data) return fail(404, "User not found");

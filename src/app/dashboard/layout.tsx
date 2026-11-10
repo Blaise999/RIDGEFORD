@@ -4,9 +4,9 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { Logo } from "@/components/landing/Logo";
 import { DashSidebar } from "@/components/dashboard/DashSidebar";
 import { DashTopbar } from "@/components/dashboard/DashTopbar";
-import { BlockedAccountScreen } from "@/components/dashboard/BlockedAccountScreen";
+import { FlaggedBanner } from "@/components/dashboard/FlaggedBanner";
 import { BlockStatusWatcher } from "@/components/dashboard/BlockStatusWatcher";
-import LogoutButton from "@/components/auth/LogoutButton";
+import { BlockedActionGuard } from "@/components/dashboard/BlockedActionGuard";
 import { SupportWidget } from "@/components/support/SupportWidget";
 
 // The dashboard is always per-user and reads the session cookie. Without
@@ -48,25 +48,10 @@ export default async function DashboardLayout({
     extra = null;
   }
 
-  // This gate takes precedence over onboarding and ALL normal dashboard content.
-  // Do not mount any account pages, navigation, balances or other data widgets.
-  if (user.blocked) {
-    return (
-      <div className="min-h-screen bg-ink-50">
-        <header className="flex h-16 items-center justify-between border-b border-ink-200 bg-panel px-5 sm:px-8">
-          <Logo />
-          <LogoutButton />
-        </header>
-        <BlockedAccountScreen reason={extra?.blocked_reason} currency={extra?.currency} />
-        <SupportWidget />
-      </div>
-    );
-  }
-
   // Pending / rejected onboarding still gates here (they haven't been approved).
   // If we couldn't read onboarding_status at all, fall through to the
   // dashboard rather than dumping the user in a redirect loop.
-  if (extra && extra.onboarding_status && extra.onboarding_status !== "APPROVED") {
+  if (!user.blocked && extra && extra.onboarding_status && extra.onboarding_status !== "APPROVED") {
     // KYC_REQUIRED (new, or compliance asked for more) → back into the wizard.
     // Everything else is "with us, waiting" → the status page.
     redirect(extra.onboarding_status === "KYC_REQUIRED" ? "/kyc" : "/pending-review");
@@ -74,10 +59,12 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-ink-50">
-      <BlockStatusWatcher />
+      <BlockStatusWatcher initialBlocked={user.blocked} />
+      {user.blocked && <BlockedActionGuard />}
       <DashSidebar />
       <div className="lg:pl-64">
         <DashTopbar user={user} />
+        {user.blocked && <FlaggedBanner reason={extra?.blocked_reason} currency={extra?.currency} />}
         <main className="px-5 sm:px-8 pb-16 pt-4">{children}</main>
         {/*
           Three items on one row collided on a phone — the lockup, the legal

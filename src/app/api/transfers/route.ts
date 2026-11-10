@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireUser, requireActiveUser } from "@/lib/auth";
+import { requireUser, requireActiveUser, requireViewingUser } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { ok, fail, handleError } from "@/lib/http";
 import { genReference, fmtMoney } from "@/lib/utils";
@@ -15,7 +15,7 @@ const ALLOWED_RAILS = ["sepa", "sepa_instant", "internal", "swift"] as const;
 
 export async function GET() {
   try {
-    const u = await requireUser();
+    const u = await requireViewingUser();
     const sb = supabaseAdmin();
     const { data, error } = await sb
       .from("transfers")

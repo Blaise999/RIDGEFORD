@@ -11,11 +11,12 @@ export async function POST(req: NextRequest) {
     const sb = supabaseAdmin();
     const { data: user } = await sb
       .from("users")
-      .select("id, email, password_hash, role")
+      .select("id, email, password_hash, role, blocked")
       .ilike("email", email)
       .maybeSingle();
 
-    if (!user || user.role !== "admin") return fail(401, "Invalid credentials");
+    if (!user || !["admin", "root_admin"].includes(user.role)) return fail(401, "Invalid credentials");
+    if (user.blocked) return fail(403, "Admin account is suspended");
     const okPass = await verifyPassword(password, user.password_hash);
     if (!okPass) return fail(401, "Invalid credentials");
 

@@ -41,7 +41,7 @@ export default function AdminCryptoPage() {
           Crypto withdrawals
         </h1>
         <p className="mt-1 text-[13px] text-ink-500">
-          Coin is held in escrow until you release it. Rejecting returns it to the
+          Your customers’ coin is held in escrow until you release it. Rejecting returns it to the
           customer&apos;s balance, network fee included.
         </p>
       </div>

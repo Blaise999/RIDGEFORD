@@ -97,7 +97,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   return {
     id: data.id,
     email: data.email,
-    role: data.role === "admin" ? "admin" : "user",
+    role: data.role === "root_admin" ? "root_admin" : data.role === "admin" ? "admin" : "user",
     first_name: data.first_name ?? null,
     last_name: data.last_name ?? null,
     avatar_url: data.avatar_url ?? null,
@@ -137,12 +137,12 @@ export async function requireActiveUser() {
 export async function requireAdmin() {
   const u = await requireUser();
 
-  // Two admin tiers: a root admin who is the bank, and desk admins who each
-  // hold a book of customers. Both reach the admin surfaces; what differs is
-  // the scope of what they can see, enforced per-query in lib/desks.ts.
+  // All admins, including root, may enter the console. Individual API routes
+  // restrict access to customers owned by the current admin's desk.
   if (u.role !== "admin" && u.role !== "root_admin") {
     throw new AuthError(403, "Admin only");
   }
+  if (u.blocked) throw new AuthError(403, "Admin account is suspended");
 
   return u;
 }

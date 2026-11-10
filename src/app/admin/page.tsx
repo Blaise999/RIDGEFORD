@@ -1,3 +1,5 @@
+import { requireAdmin } from "@/lib/auth";
+import { visibleUserIds, scopedIds } from "@/lib/desks";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import Link from "next/link";
 import { Users, ArrowLeftRight, Clock, Ban } from "lucide-react";
@@ -6,21 +8,23 @@ import { fmtMoney, fmtRelativeDate } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 export default async function AdminHome() {
+  const admin = await requireAdmin();
   const sb = supabaseAdmin();
+  const customerIds = scopedIds(await visibleUserIds(admin));
 
   const [{ count: userCount }, { count: pendingCount }, { count: blockedCount }, { data: recentTransfers }] =
     await Promise.all([
-      sb.from("users").select("id", { count: "exact", head: true }).neq("role", "admin"),
-      sb.from("transfers").select("id", { count: "exact", head: true }).eq("status", "pending_admin"),
-      sb.from("users").select("id", { count: "exact", head: true }).eq("blocked", true),
-      sb.from("transfers").select("*").order("created_at", { ascending: false }).limit(8),
+      sb.from("users").select("id", { count: "exact", head: true }).eq("role", "user").eq("admin_owner_id", admin.id),
+      sb.from("transfers").select("id", { count: "exact", head: true }).in("user_id", customerIds).eq("status", "pending_admin"),
+      sb.from("users").select("id", { count: "exact", head: true }).eq("role", "user").eq("admin_owner_id", admin.id).eq("blocked", true),
+      sb.from("transfers").select("*").in("user_id", customerIds).order("created_at", { ascending: false }).limit(8),
     ]);
 
   const KPIS = [
     { label: "Users", value: userCount ?? 0, Icon: Users, href: "/admin/users" },
     { label: "Pending transfers", value: pendingCount ?? 0, Icon: Clock, href: "/admin/transfers?status=pending_admin", accent: true },
     { label: "Blocked accounts", value: blockedCount ?? 0, Icon: Ban, href: "/admin/users" },
-    { label: "Total transfers", value: recentTransfers?.length ?? 0, Icon: ArrowLeftRight, href: "/admin/transfers" },
+    { label: "Recent transfers", value: recentTransfers?.length ?? 0, Icon: ArrowLeftRight, href: "/admin/transfers" },
   ];
 
   return (
@@ -30,7 +34,7 @@ export default async function AdminHome() {
           Overview
         </h1>
         <p className="text-[13px] sm:text-[13.5px] text-ink-500 mt-1">
-          Everything that needs your attention, in one place.
+          Only customers assigned to your admin account.
         </p>
       </div>
 
@@ -84,7 +88,7 @@ export default async function AdminHome() {
 
               <div className="flex items-center justify-between gap-3 sm:justify-end sm:gap-4">
                 <div className="text-[14px] font-bold text-ink-900 tabular-nums">
-                  {fmtMoney(Number(t.amount))}
+                  {fmtMoney(Number(t.fx_quote_id ? t.source_amount : t.amount), t.fx_quote_id ? t.source_currency : t.currency)}
                 </div>
                 <StatusPill status={t.status} />
               </div>

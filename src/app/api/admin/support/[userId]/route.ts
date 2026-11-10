@@ -1,3 +1,4 @@
+import { canActOn } from "@/lib/desks";
 import { requireAdmin } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { ok, fail, handleError } from "@/lib/http";
@@ -20,8 +21,9 @@ export async function GET(
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    await requireAdmin();
+    const admin = await requireAdmin();
     const { userId } = await params;
+    if (!(await canActOn(admin, userId))) return fail(404, "Support conversation not found in your desk");
     const url = new URL(req.url);
     const after = url.searchParams.get("after") || undefined;
 
@@ -63,6 +65,7 @@ export async function POST(
   try {
     const admin = await requireAdmin();
     const { userId } = await params;
+    if (!(await canActOn(admin, userId))) return fail(404, "Support conversation not found in your desk");
     const json = await req.json().catch(() => ({}));
     const body = typeof json?.body === "string" ? json.body : "";
     const imageUrl =

@@ -52,7 +52,7 @@ export default function AdminKycPage() {
           Identity verification
         </h1>
         <p className="mt-1 text-[13px] text-ink-500">
-          Customer due diligence files, ordered newest first. Highest risk scores need a
+          Verification files belonging to your desk, newest first. Highest risk scores need a
           second pair of eyes.
         </p>
       </div>

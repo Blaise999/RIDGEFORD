@@ -11,8 +11,8 @@ export const dynamic = "force-dynamic";
  */
 export async function GET() {
   try {
-    await requireAdmin();
-    const conversations = await listConversationsForAdmin();
+    const admin = await requireAdmin();
+    const conversations = await listConversationsForAdmin(admin.id);
     const totalUnread = conversations.reduce(
       (s, c) => s + (c.unread_admin || 0),
       0

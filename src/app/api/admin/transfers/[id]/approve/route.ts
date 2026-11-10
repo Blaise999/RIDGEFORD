@@ -1,3 +1,4 @@
+import { canActOn } from "@/lib/desks";
 import { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -23,6 +24,7 @@ export async function POST(
       .eq("id", id)
       .single();
     if (tErr || !transfer) return fail(404, "Transfer not found");
+    if (!(await canActOn(admin, transfer.user_id))) return fail(404, "Transfer not found in your desk");
     if (transfer.status !== "pending_admin") return fail(400, `Transfer is already ${transfer.status}`);
 
     const { data: sender } = await sb

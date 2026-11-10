@@ -1,3 +1,4 @@
+import { visibleUserIds, scopedIds } from "@/lib/desks";
 import { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -5,7 +6,7 @@ import { ok, fail, handleError } from "@/lib/http";
 
 export async function GET(req: NextRequest) {
   try {
-    await requireAdmin();
+    const admin = await requireAdmin();
     const url = new URL(req.url);
     const dir = url.searchParams.get("direction");
     const sb = supabaseAdmin();
@@ -13,6 +14,7 @@ export async function GET(req: NextRequest) {
     let q = sb
       .from("transactions")
       .select("*")
+      .in("user_id", scopedIds(await visibleUserIds(admin)))
       .order("created_at", { ascending: false })
       .limit(500);
     if (dir === "sent") q = q.eq("direction", "debit");

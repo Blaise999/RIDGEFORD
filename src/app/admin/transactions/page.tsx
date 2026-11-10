@@ -27,7 +27,7 @@ export default function AdminTransactionsPage() {
       <div>
         <h1 className="text-[28px] font-bold tracking-tight text-ink-900">Transactions</h1>
         <p className="text-[13.5px] text-ink-500 mt-1">
-          Every posted ledger row across all users.
+          Ledger entries for your assigned customers only.
         </p>
       </div>
 

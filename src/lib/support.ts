@@ -1,3 +1,4 @@
+import { visibleUserIds, scopedIds } from "./desks";
 import { supabaseAdmin } from "./supabase/admin";
 import { notify } from "./notify";
 
@@ -42,6 +43,7 @@ export async function getOrCreateConversation(
   const { data: existing } = await sb
     .from("support_conversations")
     .select("*")
+    .in("user_id", scopedIds(await visibleUserIds({ id: adminId })))
     .eq("user_id", userId)
     .maybeSingle();
 
@@ -197,7 +199,7 @@ export async function markRead(
 }
 
 /** Admin inbox: conversations sorted by most recent activity. */
-export async function listConversationsForAdmin(): Promise<
+export async function listConversationsForAdmin(adminId: string): Promise<
   (SupportConversation & {
     user: {
       id: string;

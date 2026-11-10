@@ -1,3 +1,4 @@
+import { visibleUserIds, scopedIds } from "@/lib/desks";
 import { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -8,13 +9,14 @@ export const dynamic = "force-dynamic";
 /** GET /api/admin/kyc?status=submitted — the compliance queue. */
 export async function GET(req: NextRequest) {
   try {
-    await requireAdmin();
+    const admin = await requireAdmin();
     const status = req.nextUrl.searchParams.get("status");
     const sb = supabaseAdmin();
 
     let q = sb
       .from("kyc_applications")
       .select("*")
+      .in("user_id", scopedIds(await visibleUserIds(admin)))
       .order("submitted_at", { ascending: false, nullsFirst: false })
       .limit(400);
     if (status && status !== "all") q = q.eq("status", status);

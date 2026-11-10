@@ -64,9 +64,9 @@ export default function AdminUsersPage() {
     <div className="pt-6 space-y-5">
       <div className="flex items-end justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-[28px] font-bold tracking-tight text-ink-900">Users</h1>
+          <h1 className="text-[28px] font-bold tracking-tight text-ink-900">My customers</h1>
           <p className="text-[13.5px] text-ink-500 mt-1">
-            USD and EUR customer accounts. Review activity and account status.
+            USD and EUR accounts assigned to your admin desk.
           </p>
         </div>
 

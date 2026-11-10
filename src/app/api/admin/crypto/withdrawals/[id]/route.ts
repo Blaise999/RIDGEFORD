@@ -1,3 +1,4 @@
+import { canActOn } from "@/lib/desks";
 import { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -23,6 +24,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     const { data: w } = await sb.from("crypto_withdrawals").select("*").eq("id", id).single();
     if (!w) return fail(404, "Withdrawal not found");
+    if (!(await canActOn(admin, w.user_id))) return fail(404, "Withdrawal not found in your desk");
     if (w.status !== "pending_admin") return fail(400, `This withdrawal is already ${w.status}.`);
 
     const asset = await getAsset(w.asset_id);

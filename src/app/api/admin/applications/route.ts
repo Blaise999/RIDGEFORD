@@ -5,7 +5,7 @@ import { ok, fail, handleError } from "@/lib/http";
 
 export async function GET(req: NextRequest) {
   try {
-    await requireAdmin();
+    const admin = await requireAdmin();
     const url = new URL(req.url);
     const status = url.searchParams.get("status") || "PENDING_REVIEW";
     const sb = supabaseAdmin();
@@ -14,7 +14,8 @@ export async function GET(req: NextRequest) {
       .select(
         "id,email,currency,first_name,middle_name,last_name,date_of_birth,place_of_birth,nationality,phone,street,street_number,postal_code,city,country,employment_status,employer,occupation,monthly_income,source_of_funds,tax_id,id_document_type,id_document_number,onboarding_status,rejection_reason,reviewed_at,created_at"
       )
-      .neq("role", "admin")
+      .eq("role", "user")
+      .eq("admin_owner_id", admin.id)
       .order("created_at", { ascending: false })
       .limit(500);
     if (status !== "ALL") q = q.eq("onboarding_status", status);

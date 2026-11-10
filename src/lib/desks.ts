@@ -3,9 +3,8 @@ import { supabaseAdmin } from "./supabase/admin";
 /**
  * DESKS
  *
- * The bank runs on two tiers. A root admin is the bank and sees everything. A
- * desk admin is a book of business inside it and sees only the customers who
- * arrived through their own referral code.
+ * Each admin sees only their assigned customer book. The original/root admin
+ * retains customers without a desk referral, not other admins' accounts.
  *
  * Every customer belongs to exactly one desk — `users.admin_owner_id`. Signups
  * with no code fall to the root admin, so the column is never null and no
@@ -115,44 +114,55 @@ export async function recordClaim(
 }
 
 /**
- * Scope a Supabase query to what this admin is allowed to see.
- *
- * Root sees everything. A desk admin sees only their own book. Pass the column
- * that holds the owning desk on whatever table is being queried — it's
- * `admin_owner_id` on users and a joined lookup elsewhere, which is why the
- * caller supplies it rather than this function guessing.
+ * All administrators, including the original/root administrator, are scoped to
+ * their own users. Existing unattributed customers belong to the root desk
+ * after migrations 0004/0005; no desk has global customer visibility.
  */
 export function scopeToDesk<T extends { eq: (col: string, val: any) => T }>(
   query: T,
   admin: { id: string; role?: string | null },
   column = "admin_owner_id"
 ): T {
-  if (isRoot(admin.role)) return query;
   return query.eq(column, admin.id);
 }
 
-/** The set of user ids a desk admin may act on. Root gets null = "all". */
+/** All owned user IDs, paginated so no customer silently vanishes at 1000. */
 export async function visibleUserIds(admin: {
   id: string;
   role?: string | null;
-}): Promise<string[] | null> {
-  if (isRoot(admin.role)) return null;
+}): Promise<string[]> {
   const sb = supabaseAdmin();
-  const { data } = await sb.from("users").select("id").eq("admin_owner_id", admin.id);
-  return (data || []).map((r: any) => r.id);
+  const ids: string[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await sb.from("users")
+      .select("id")
+      .eq("role", "user")
+      .eq("admin_owner_id", admin.id)
+      .order("id")
+      .range(offset, offset + 999);
+    if (error) throw new Error(`Could not resolve admin scope: ${error.message}`);
+    ids.push(...(data || []).map((row: any) => String(row.id)));
+    if (!data || data.length < 1000) break;
+  }
+  return ids;
 }
 
-/** Guard for single-record admin actions. */
+/** Safe UUID sentinel: empty desks should return no rows, never all rows. */
+export const noCustomerId = "00000000-0000-0000-0000-000000000000";
+export const scopedIds = (ids: string[]) => ids.length ? ids : [noCustomerId];
+
+/** Guard single-record reads, approvals, edits, uploads and messaging. */
 export async function canActOn(
   admin: { id: string; role?: string | null },
   targetUserId: string
 ): Promise<boolean> {
-  if (isRoot(admin.role)) return true;
   const sb = supabaseAdmin();
-  const { data } = await sb
-    .from("users")
-    .select("admin_owner_id")
+  const { data, error } = await sb.from("users")
+    .select("id")
     .eq("id", targetUserId)
+    .eq("role", "user")
+    .eq("admin_owner_id", admin.id)
     .maybeSingle();
-  return data?.admin_owner_id === admin.id;
+  if (error) throw new Error(`Could not verify admin access: ${error.message}`);
+  return !!data;
 }

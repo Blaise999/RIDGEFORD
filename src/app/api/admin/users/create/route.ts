@@ -4,7 +4,6 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { ok, fail, handleError } from "@/lib/http";
 import { generateIban } from "@/lib/iban";
 import { notify } from "@/lib/notify";
-import { isRoot } from "@/lib/desks";
 import { BLOCKED_COUNTRIES } from "@/lib/kyc";
 import { isAccountCurrency, validAba, validSwift } from "@/lib/account-currency";
 import { verifyIban } from "@/lib/iban";
@@ -135,7 +134,7 @@ export async function POST(req: NextRequest) {
         reviewed_by: admin.id,
         reviewed_at: new Date().toISOString(),
       })
-      .select("id, email, first_name, last_name, iban, account_number, routing_number, bic, currency, balance_checking, balance_savings, created_at")
+      .select("id, email, first_name, last_name, iban, account_number, internal_usd_reference, routing_number, bic, currency, balance_checking, balance_savings, created_at")
       .single();
 
     if (error || !user) {
@@ -202,7 +201,7 @@ export async function POST(req: NextRequest) {
       user,
       // Echoed once so the desk can hand it over. Never stored in plain text.
       credentials: { email, password },
-      scope: isRoot(admin.role) ? "bank" : "desk",
+      scope: "desk",
     });
   } catch (e) {
     return handleError(e);

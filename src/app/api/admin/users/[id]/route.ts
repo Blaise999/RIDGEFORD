@@ -1,3 +1,4 @@
+import { canActOn } from "@/lib/desks";
 import { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -8,8 +9,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdmin();
+    const admin = await requireAdmin();
     const { id } = await params;
+    if (!(await canActOn(admin, id))) return fail(404, "Customer not found in your desk");
     const sb = supabaseAdmin();
 
     const [{ data: user }, { data: txns }, { data: transfers }] = await Promise.all([

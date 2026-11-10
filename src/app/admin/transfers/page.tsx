@@ -73,7 +73,7 @@ export default function AdminTransfersPage() {
       <div>
         <h1 className="text-[28px] font-bold tracking-tight text-ink-900">Transfers</h1>
         <p className="text-[13.5px] text-ink-500 mt-1">
-          Review and action customer transfer requests.
+          Review transfers requested by customers on your desk.
         </p>
       </div>
 

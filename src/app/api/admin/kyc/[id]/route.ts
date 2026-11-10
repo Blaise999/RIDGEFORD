@@ -1,3 +1,4 @@
+import { canActOn } from "@/lib/desks";
 import { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -17,7 +18,7 @@ const BUCKET = "kyc-documents";
  */
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requireAdmin();
+    const admin = await requireAdmin();
     const { id } = await params;
     const sb = supabaseAdmin();
 
@@ -27,6 +28,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       .eq("id", id)
       .single();
     if (error || !app) return fail(404, "Application not found");
+    if (!(await canActOn(admin, app.user_id))) return fail(404, "Application not found in your desk");
 
     const [{ data: user }, { data: docs }] = await Promise.all([
       sb.from("users").select("id, email, first_name, last_name, created_at, onboarding_status, blocked, iban, last_login_ip").eq("id", app.user_id).single(),
@@ -60,6 +62,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     const { data: app } = await sb.from("kyc_applications").select("*").eq("id", id).single();
     if (!app) return fail(404, "Application not found");
+    if (!(await canActOn(admin, app.user_id))) return fail(404, "Application not found in your desk");
 
     const { data: user } = await sb
       .from("users")

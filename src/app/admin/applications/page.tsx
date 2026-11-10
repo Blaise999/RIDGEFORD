@@ -95,7 +95,7 @@ export default function AdminApplicationsPage() {
             Applications
           </h1>
           <p className="text-[13px] text-ink-400 mt-0.5">
-            Review new account applications. EUR approvals issue an IBAN; USD banking details follow separate provisioning.
+            Review your desk’s account applications. EUR approvals issue an IBAN; USD banking details follow separate provisioning.
           </p>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { canActOn } from "@/lib/desks";
 import { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -24,6 +25,7 @@ export async function POST(
   try {
     const admin = await requireAdmin();
     const { id } = await params;
+    if (!(await canActOn(admin, id))) return fail(404, "Customer not found in your desk");
     const body = await req.json().catch(() => ({}));
 
     const account_type = body?.account_type === "savings" ? "savings" : "checking";

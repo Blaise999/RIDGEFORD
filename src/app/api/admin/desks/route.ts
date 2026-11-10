@@ -2,16 +2,15 @@ import { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { ok, fail, handleError } from "@/lib/http";
-import { isRoot } from "@/lib/desks";
+
 
 export const dynamic = "force-dynamic";
 
 /**
  * GET /api/admin/desks
  *
- * Root sees every desk and its book. A desk admin sees only their own row —
- * enough to know their code and how many customers came through it, and
- * nothing about anyone else's book.
+ * Every admin, including the original administrator, sees only their own
+ * desk and the customers attributed to it.
  */
 export async function GET() {
   try {
@@ -22,7 +21,7 @@ export async function GET() {
       .from("users")
       .select("id, username, first_name, last_name, email, role, admin_label, created_at")
       .in("role", ["admin", "root_admin"]);
-    if (!isRoot(admin.role)) adminQuery = adminQuery.eq("id", admin.id);
+    adminQuery = adminQuery.eq("id", admin.id);
 
     const { data: admins, error } = await adminQuery;
     if (error) return fail(500, error.message);
@@ -51,7 +50,7 @@ export async function GET() {
       };
     });
 
-    return ok({ desks, scope: isRoot(admin.role) ? "bank" : "desk" });
+    return ok({ desks, scope: "desk" });
   } catch (e) {
     return handleError(e);
   }
@@ -59,7 +58,7 @@ export async function GET() {
 
 /**
  * POST /api/admin/desks — mint a referral code.
- * Root can mint for any desk; a desk admin only for themselves.
+ * All admins can mint codes only for their own desk.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -71,7 +70,9 @@ export async function POST(req: NextRequest) {
       return fail(400, "Codes are 4–32 characters: letters, digits, hyphen or underscore.");
     }
 
-    const owner = isRoot(admin.role) ? String(admin_id || admin.id) : admin.id;
+    // No administrator can view or allocate another desk's customers.
+    if (admin_id && String(admin_id) !== admin.id) return fail(403, "You can manage only your own desk");
+    const owner = admin.id;
     const sb = supabaseAdmin();
 
     const { data: clash } = await sb

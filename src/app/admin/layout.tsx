@@ -13,7 +13,7 @@ export default async function AdminLayout({
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/admin-login");
-  if (user.role !== "admin") redirect("/dashboard");
+  if (user.role !== "admin" && user.role !== "root_admin") redirect("/dashboard");
 
   return (
     <div className="min-h-screen bg-ink-50">

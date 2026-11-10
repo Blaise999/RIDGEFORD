@@ -61,49 +61,22 @@ const BRAND = {
 };
 
 /**
- * The Ridgeford Capital Bank logo, inlined as a base64 data URI so it renders without
- * an external image host. Apple Mail / iOS Mail / most webmail render data
- * URIs; Outlook (mso) ignores them, so the shell provides an mso fallback.
- * This is the exact artwork from /public/logo.svg.
+ * Email clients frequently block SVG and data URI images. The PNG below is
+ * produced from the exact geometry of src/components/brand/Logo.tsx and is
+ * shipped in /public. Keep this URL public and HTTPS so webmail can fetch it.
+ * If you deploy to a different domain, set EMAIL_ASSET_BASE_URL to that
+ * site's absolute HTTPS origin (without a trailing slash).
  */
-/**
- * The Ridgeford mark, as an inline SVG data URI. Same geometry as
- * components/brand/Logo.tsx — three strata narrowing upward on a heavier
- * steel base — so the email and the app are unmistakably the same bank.
- *
- * The previous version was the old blue Crest artwork: a completely different
- * mark still going out on every transactional email.
- *
- * Apple Mail, iOS Mail and most webmail render data URIs. Outlook (mso) does
- * not, so the shell keeps a VML-free text fallback beneath it.
- */
-const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><rect x="8" y="16" width="48" height="7" rx="1.5" fill="#ffffff" opacity="0.42"/><rect x="14" y="27" width="36" height="7" rx="1.5" fill="#ffffff" opacity="0.68"/><rect x="20" y="38" width="24" height="7" rx="1.5" fill="#ffffff"/><rect x="4" y="50" width="56" height="9" rx="2" fill="#8a9bab"/></svg>`;
+const EMAIL_ASSET_BASE_URL =
+  (process.env.EMAIL_ASSET_BASE_URL || "https://ridgefordbank.com").replace(/\/+$/, "");
+const LOGO_URL = `${EMAIL_ASSET_BASE_URL}/ridgeford-email-mark.png`;
 
-/**
- * WHY THE EMAIL LOGO WAS INVISIBLE.
- *
- * It was an inline SVG served as a base64 data URI. Two independent reasons
- * that can never work in an inbox:
- *
- *   1. Gmail does not render SVG images AT ALL — web, iOS or Android. It
- *      strips them. Neither does Outlook.com.
- *   2. Gmail also strips `data:` URIs on <img src>, so even a PNG encoded
- *      that way would not have shown.
- *
- * Email clients want a PNG at an absolute https URL. /public already has the
- * mark rendered at every size, so the masthead now points at the 192px one.
- * NEXT_PUBLIC_APP_URL (or APP_URL) should be set to the canonical site domain.
- * In production, the public site domain is used as a fallback rather than localhost.
- */
+// Account buttons keep pointing to the configured website, independently of
+// the public asset origin used for images in email clients.
 function assetBase() {
-  const raw =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.APP_URL ||
-    (process.env.NODE_ENV === "production" ? "https://ridgefordbank.com" : "http://localhost:3000");
+  const raw = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "https://ridgefordbank.com";
   return raw.replace(/\/+$/, "");
 }
-
-const LOGO_URL = `${assetBase()}/android-chrome-192x192.png`;
 
 function escape(s: string) {
   return String(s ?? "").replace(/[&<>"']/g, (m) =>

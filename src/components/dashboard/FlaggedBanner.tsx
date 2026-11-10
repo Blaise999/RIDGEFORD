@@ -1,78 +1,75 @@
 "use client";
 
-import { AlertTriangle, Mail, Phone, X } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, Headset, Info } from "lucide-react";
 import { useState } from "react";
 
+/** Legacy account-review banner. All customer assistance stays inside Ridgeford chat. */
 export function FlaggedBanner({
   reason,
-  blockedAt,
+  currency = "EUR",
 }: {
   reason?: string | null;
-  blockedAt?: string | null;
+  blockedAt?: string | null; // Retained for compatibility with older callers.
+  currency?: "EUR" | "USD" | null;
 }) {
   const [open, setOpen] = useState(false);
+  const coverageNote = currency === "USD"
+    ? "USD account · U.S. deposit-insurance eligibility depends on the institution holding the funds. Ask Ridgeford Support Team for details."
+    : "EUR account · German deposit-protection eligibility depends on the institution holding the funds. Ask Ridgeford Support Team for details.";
 
-  const ticket = `SUP-${(blockedAt ? new Date(blockedAt).getTime() : Date.now())
-    .toString(16)
-    .slice(-8)
-    .toUpperCase()}`;
+  function openSupport() {
+    window.dispatchEvent(new Event("ridgeford:open-support"));
+  }
 
   return (
-    <div className="px-5 sm:px-8 pt-4">
-      <div className="rounded-2xl border border-red-500/30 bg-red-500/10 overflow-hidden">
+    <section className="px-5 pt-4 sm:px-8" aria-label="Account access notice">
+      <div className="overflow-hidden rounded-2xl border border-red-500/25 bg-red-500/[0.07]">
         <button
-          onClick={() => setOpen((v) => !v)}
-          className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-red-500/15/60 transition"
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((value) => !value)}
+          className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-red-500/10"
         >
-          <div className="h-9 w-9 rounded-full bg-red-500/10 grid place-items-center text-red-400 shrink-0">
-            <AlertTriangle className="h-4 w-4" />
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-red-500/20 bg-red-500/10 text-red-400">
+            <AlertTriangle className="h-5 w-5" aria-hidden="true" />
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[13.5px] font-semibold text-red-200">
-              Your account is under review
-            </div>
-            <div className="text-[12px] text-red-300/90 truncate">
-              You can view your account, but transfers and other actions are paused until the review is complete.
-            </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[14px] font-semibold text-ink-900">Your account access is restricted</p>
+            <p className="mt-0.5 text-[12.5px] leading-relaxed text-ink-600">
+              For more information or to appeal, message Ridgeford Support Team.
+            </p>
           </div>
-          <span className="hidden sm:inline text-[11px] font-bold uppercase tracking-wide text-red-300">
-            {open ? "Hide details" : "Show details"}
+          <span className="shrink-0 text-[12px] font-semibold text-ink-500">
+            {open ? "Less" : "Details"}
           </span>
         </button>
 
         {open && (
-          <div className="px-4 pb-4 pt-1 border-t border-red-500/30 text-[13px] text-red-200 space-y-3">
-            {reason && (
-              <div>
-                <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-red-300">
-                  Review note
-                </span>
-                <div className="mt-1 text-red-300">{reason}</div>
+          <div className="border-t border-red-500/20 px-4 pb-5 pt-4">
+            {reason?.trim() && (
+              <div className="rounded-xl border border-ink-200 bg-panel px-4 py-3">
+                <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-500">Reason for restriction</p>
+                <p className="mt-2 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-ink-900">{reason}</p>
               </div>
             )}
-            <div className="grid sm:grid-cols-3 gap-2 text-[12.5px]">
-              <a
-                href="mailto:support@ridgefordbank.eu?subject=Account%20review%20assistance"
-                className="inline-flex items-center gap-2 rounded-xl bg-panel/80 hover:bg-panel border border-red-500/30 px-3 py-2 text-red-200 font-semibold"
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="inline-flex items-center gap-2 text-[12px] text-ink-600">
+                <Info className="h-4 w-4 text-ink-500" aria-hidden="true" />
+                {coverageNote}
+              </p>
+              <button
+                type="button"
+                onClick={openSupport}
+                className="btn btn-primary inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-5"
               >
-                <Mail className="h-4 w-4" /> support@ridgefordbank.eu
-              </a>
-              <a
-                href="tel:+493055582828"
-                className="inline-flex items-center gap-2 rounded-xl bg-panel/80 hover:bg-panel border border-red-500/30 px-3 py-2 text-red-200 font-semibold"
-              >
-                <Phone className="h-4 w-4" /> +49 30 555 82 82
-              </a>
-              <div className="inline-flex items-center gap-2 rounded-xl bg-panel/80 border border-red-500/30 px-3 py-2 text-red-200 font-semibold tabular-nums">
-                Ref · {ticket}
-              </div>
+                <Headset className="h-4 w-4" aria-hidden="true" />
+                Message support
+                <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+              </button>
             </div>
-            <p className="text-[11.5px] text-red-300/80 leading-relaxed">
-              Your funds are safe and protected by the German deposit-guarantee scheme up to 100.000 €. Most reviews complete within 1–2 business days — we'll email you the moment it's done.
-            </p>
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }

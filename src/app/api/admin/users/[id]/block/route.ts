@@ -68,7 +68,7 @@ export async function POST(
         id,
         "account_blocked",
         "Your account access is restricted",
-        `Your account access is temporarily restricted. Reason: ${reason}. Support messaging is still available.`,
+        `Your account access is temporarily restricted. Reason: ${reason}. To request information or appeal, message Ridgeford Support Team from your account.`,
         { reason }
       );
     } else {

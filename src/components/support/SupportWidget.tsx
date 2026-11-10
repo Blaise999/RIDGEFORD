@@ -24,6 +24,12 @@ function timeLabel(iso: string) {
 
 export function SupportWidget() {
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setOpen(true);
+    window.addEventListener("ridgeford:open-support", handler);
+    return () => window.removeEventListener("ridgeford:open-support", handler);
+  }, []);
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -123,7 +129,7 @@ export function SupportWidget() {
 
             <div className="flex-1 min-w-0">
               <div className="text-[14px] font-semibold">
-                Ridgeford Capital Bank Support
+                Ridgeford Support Team
               </div>
 
               <div className="text-[11.5px] text-white/70 flex items-center gap-1.5">
@@ -134,8 +140,8 @@ export function SupportWidget() {
                   )}
                 />
                 {live
-                  ? "Live · we usually reply in minutes"
-                  : "We usually reply in minutes"}
+                  ? "Connected · Secure support messaging"
+                  : "Secure support messaging"}
               </div>
             </div>
 
@@ -172,7 +178,7 @@ export function SupportWidget() {
                   </p>
 
                   <p className="mt-1 text-[12.5px] text-ink-500">
-                    Send us a message and a Ridgeford Capital Bank agent will reply here.
+                    Send us a message and Ridgeford Support Team will reply here.
                     You&apos;ll also get a notification.
                   </p>
                 </div>
@@ -189,7 +195,7 @@ export function SupportWidget() {
                     <div className="max-w-[78%]">
                       {!mine && (
                         <div className="text-[10.5px] font-semibold text-ink-500 mb-0.5 ml-1">
-                          {m.sender_name || "Support"}
+                          Ridgeford Support Team
                         </div>
                       )}
 

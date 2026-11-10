@@ -4,7 +4,9 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { Logo } from "@/components/landing/Logo";
 import { DashSidebar } from "@/components/dashboard/DashSidebar";
 import { DashTopbar } from "@/components/dashboard/DashTopbar";
-import { FlaggedBanner } from "@/components/dashboard/FlaggedBanner";
+import { BlockedAccountScreen } from "@/components/dashboard/BlockedAccountScreen";
+import { BlockStatusWatcher } from "@/components/dashboard/BlockStatusWatcher";
+import LogoutButton from "@/components/auth/LogoutButton";
 import { SupportWidget } from "@/components/support/SupportWidget";
 
 // The dashboard is always per-user and reads the session cookie. Without
@@ -20,7 +22,7 @@ export default async function DashboardLayout({
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  if (user.role === "admin") redirect("/admin");
+  if (user.role !== "user") redirect("/admin");
 
   const sb = supabaseAdmin();
   // Tolerate a failed extra query — the layout used to assume `data` was
@@ -31,18 +33,34 @@ export default async function DashboardLayout({
     blocked?: boolean | null;
     blocked_reason?: string | null;
     blocked_at?: string | null;
+    currency?: "EUR" | "USD" | null;
     onboarding_status?: string | null;
   } | null = null;
 
   try {
     const { data } = await sb
       .from("users")
-      .select("first_name, blocked, blocked_reason, blocked_at, onboarding_status")
+      .select("first_name, blocked, blocked_reason, blocked_at, currency, onboarding_status")
       .eq("id", user.id)
       .single();
     extra = data || null;
   } catch {
     extra = null;
+  }
+
+  // This gate takes precedence over onboarding and ALL normal dashboard content.
+  // Do not mount any account pages, navigation, balances or other data widgets.
+  if (user.blocked) {
+    return (
+      <div className="min-h-screen bg-ink-50">
+        <header className="flex h-16 items-center justify-between border-b border-ink-200 bg-panel px-5 sm:px-8">
+          <Logo />
+          <LogoutButton />
+        </header>
+        <BlockedAccountScreen reason={extra?.blocked_reason} currency={extra?.currency} />
+        <SupportWidget />
+      </div>
+    );
   }
 
   // Pending / rejected onboarding still gates here (they haven't been approved).
@@ -54,19 +72,12 @@ export default async function DashboardLayout({
     redirect(extra.onboarding_status === "KYC_REQUIRED" ? "/kyc" : "/pending-review");
   }
 
-  // Blocked users can sign in and see their dashboard read-only.
-  // Writes (transfers, vault moves, etc.) are rejected server-side.
   return (
     <div className="min-h-screen bg-ink-50">
+      <BlockStatusWatcher />
       <DashSidebar />
       <div className="lg:pl-64">
         <DashTopbar user={user} />
-        {user.blocked && (
-          <FlaggedBanner
-            reason={extra?.blocked_reason || null}
-            blockedAt={extra?.blocked_at || null}
-          />
-        )}
         <main className="px-5 sm:px-8 pb-16 pt-4">{children}</main>
         {/*
           Three items on one row collided on a phone — the lockup, the legal

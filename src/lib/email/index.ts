@@ -23,7 +23,7 @@ export function getResend() {
 }
 
 async function send(to: string, subject: string, html: string) {
-  const from = process.env.MAIL_FROM || "Ridgeford Capital Bank <noreply@ridgefordbank.eu>";
+  const from = process.env.MAIL_FROM || "Ridgeford Support Team <noreply@ridgefordbank.eu>";
   const resend = getResend();
   if (!resend) {
     console.log("\n[email:dev] →", to);

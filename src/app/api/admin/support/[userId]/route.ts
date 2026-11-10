@@ -75,15 +75,11 @@ export async function POST(
       return fail(400, "Message cannot be empty");
     }
 
-    const adminName =
-      [admin.first_name, admin.last_name].filter(Boolean).join(" ").trim() ||
-      "Ridgeford Capital Bank Support";
-
     const msg = await postMessage({
       userId,
       sender: "admin",
       senderId: admin.id,
-      senderName: adminName,
+      senderName: "Ridgeford Support Team",
       body,
       imageUrl,
     });

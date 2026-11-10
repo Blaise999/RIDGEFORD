@@ -156,7 +156,7 @@ export async function postMessage(args: {
     await notify(
       args.userId,
       "support_reply",
-      "New reply from Ridgeford Capital Bank support",
+      "New reply from Ridgeford Support Team",
       summary.slice(0, 140),
       { conversation_id: convo.id }
     );

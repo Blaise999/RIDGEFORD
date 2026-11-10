@@ -357,9 +357,9 @@ export function accountBlockedTemplate({ firstName, reason }: { firstName: strin
     inner: `
     ${eyebrow("Account notice · Action may be required", BRAND.redFg)}
     ${h1("Your account access is restricted")}
-    ${p(`Hello ${escape(firstName || "there")}, access to your Ridgeford account is temporarily restricted. You can still sign in and message support; other account services will remain unavailable until access is restored.`)}
-    ${card([["Account status", "Access restricted"], ["Reason", reason?.trim() || "Please contact Ridgeford Support for more information."]])}
-    ${p("If you have questions or would like to request a review, sign in and select <strong>Message support</strong> on the account notice screen.")}
+    ${p(`Hello ${escape(firstName || "there")}, access to your Ridgeford account is temporarily restricted. You can still sign in and message Ridgeford Support Team; other account services will remain unavailable until access is restored.`)}
+    ${card([["Account status", "Access restricted"], ["Reason", reason?.trim() || "Please message Ridgeford Support Team for more information or to appeal."]])}
+    ${p("For more information or to appeal, sign in and select <strong>Message support</strong> on the account notice screen to contact Ridgeford Support Team.")}
     ${emailAction("View account notice", `${assetBase()}/dashboard`)}
     ${muted("For your security, never share a sign-in code or password in a support message.")}
     <p style="margin:6px 0 0 0;">${badge("Access restricted", BRAND.redBg, BRAND.redFg)}</p>
@@ -377,7 +377,7 @@ export function accountUnblockedTemplate({ firstName }: { firstName: string }) {
     ${p(`Hello ${escape(firstName || "there")}, the restriction on your Ridgeford account has been removed. You can now sign in and use your available banking features again.`)}
     ${card([["Account status", "Active"], ["Access", "Restored"]])}
     ${emailAction("Return to your account", `${assetBase()}/login`)}
-    ${muted("If this update is unexpected, contact Ridgeford Support using the details in this message.")}
+    ${muted("If this update is unexpected, message Ridgeford Support Team from your account.")}
     <p style="margin:6px 0 0 0;">${badge("Access restored", BRAND.greenBg, BRAND.greenFg)}</p>
     `,
     preheader: "Your Ridgeford account restriction has been removed. Access is restored.",

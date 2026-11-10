@@ -43,7 +43,6 @@ export async function getOrCreateConversation(
   const { data: existing } = await sb
     .from("support_conversations")
     .select("*")
-    .in("user_id", scopedIds(await visibleUserIds({ id: adminId })))
     .eq("user_id", userId)
     .maybeSingle();
 
@@ -212,9 +211,12 @@ export async function listConversationsForAdmin(adminId: string): Promise<
 > {
   const sb = supabaseAdmin();
 
+  // Only the requesting admin's customers; filter BEFORE limiting results.
+  const owned = scopedIds(await visibleUserIds({ id: adminId }));
   const { data: convos, error } = await sb
     .from("support_conversations")
     .select("*")
+    .in("user_id", owned)
     .order("last_message_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
     .limit(300);

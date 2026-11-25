@@ -1,3 +1,4 @@
+import type { AccountCurrency } from "./account-currency";
 import { supabaseAdmin } from "./supabase/admin";
 
 /* ============================================================================
@@ -393,12 +394,33 @@ function randomDateBetween(startIso: string, endIso: string) {
  *  Public API — generate transactions with full control
  * ========================================================================== */
 
+const US_MERCHANTS = Object.entries({
+  Groceries: ["Stop & Shop", "Big Y", "ShopRite", "Trader Joe's", "Costco", "ALDI", "Whole Foods Market", "Wegmans"],
+  Dining: ["Dunkin'", "Panera Bread", "Chipotle", "Five Guys", "Shake Shack", "Starbucks", "DoorDash", "Sweetgreen"],
+  Transport: ["CTtransit", "Metro-North Railroad", "Amtrak", "Uber", "Lyft", "Shell", "Mobil", "E-ZPass"],
+  Shopping: ["Target", "Best Buy", "The Home Depot", "Macy's", "REI", "Walmart", "Old Navy", "Staples"],
+  Subscriptions: ["Hulu", "Netflix", "Apple Music", "Peacock", "Spotify", "Max", "YouTube Premium"],
+  Bills: ["Eversource", "United Illuminating", "Aquarion Water", "Verizon", "Xfinity", "Frontier"],
+  Housing: ["Maple Grove Apartments", "Elm Street Properties", "Harbor View Rentals", "Oak Hill Apartments"],
+  Travel: ["Delta Air Lines", "JetBlue", "Southwest Airlines", "United Airlines", "Marriott", "Hilton"],
+  Entertainment: ["AMC Theatres", "Regal Cinemas", "Ticketmaster", "Bowlero", "Steam", "Dave & Buster's"],
+  Health: ["CVS Pharmacy", "Walgreens", "Planet Fitness", "LensCrafters", "LA Fitness", "ClassPass"],
+}).flatMap(([category, names]) => names.map(name => ({ name, category })));
+
+const US_EMPLOYERS = [
+  "Elm Street Design LLC", "Harbor Valley Services Inc.", "Cedar Brook Studio",
+  "Maple Hill Consulting", "East River Logistics", "Oak Ridge Software LLC",
+];
+const US_FIRST_NAMES = ["Avery", "Jordan", "Maria", "Daniel", "Maya", "Alex", "Grace", "Isaiah", "James", "Priya", "Sofia", "Chris", "Taylor", "Olivia", "Marcus", "Aisha"];
+const US_LAST_NAMES = ["Johnson", "Martinez", "Patel", "Chen", "Robinson", "Nguyen", "Davis", "Rivera", "Williams", "Murphy", "Park", "Brooks", "Jackson", "Wilson", "Garcia", "Smith"];
+
 export type SeedOptions = {
+  currency?: AccountCurrency;
   /** Direction: 'sent' = debits only, 'received' = credits only, 'both' = mix */
   direction?: "sent" | "received" | "both";
   /** How many to create */
   count?: number;
-  /** Range of each transaction amount (EUR). Default depends on direction. */
+  /** Range of each transaction amount in the account currency. Default depends on direction. */
   minAmount?: number;
   maxAmount?: number;
   /** Date range (ISO strings). If omitted, defaults to last 30 days. */
@@ -426,6 +448,8 @@ export type TxnRow = {
 };
 
 export function generateTransactions(userId: string, opts: SeedOptions = {}): TxnRow[] {
+  const currency = opts.currency ?? "EUR";
+  const isUsd = currency === "USD";
   const direction = opts.direction ?? "both";
   const count = Math.min(Math.max(opts.count ?? 40, 1), 2000);
   const to = opts.to || new Date().toISOString();
@@ -435,14 +459,11 @@ export function generateTransactions(userId: string, opts: SeedOptions = {}): Tx
   const maxA = opts.maxAmount ?? (direction === "received" ? 2500 : 250);
 
   // Filter merchants by requested categories (debits)
-  const ALL_MERCHANTS: Merchant[] = [
-    ...MERCHANTS,
-    ...EURO_MERCHANTS.map(({ name, category, min, max }) => ({ name, category, min, max })),
-  ];
+  const merchants = isUsd ? US_MERCHANTS : [...MERCHANTS, ...EURO_MERCHANTS];
   const debitPool = opts.categories && opts.categories.length
-    ? ALL_MERCHANTS.filter((m) => opts.categories!.includes(m.category))
-    : ALL_MERCHANTS;
-  const pool = debitPool.length > 0 ? debitPool : ALL_MERCHANTS;
+    ? merchants.filter((m) => opts.categories!.includes(m.category))
+    : merchants;
+  const pool = debitPool.length > 0 ? debitPool : merchants;
 
   const rows: TxnRow[] = [];
   for (let i = 0; i < count; i++) {
@@ -461,7 +482,7 @@ export function generateTransactions(userId: string, opts: SeedOptions = {}): Tx
         account_type: accountType,
         direction: "debit",
         amount: amt,
-        currency: "EUR",
+        currency,
         rail: "card",
         category: m.category,
         counterparty_name: m.name,
@@ -474,13 +495,13 @@ export function generateTransactions(userId: string, opts: SeedOptions = {}): Tx
       // 50/50 salary-like vs peer transfer
       const isSalary = Math.random() < 0.25;
       if (isSalary) {
-        const employer = pick(INCOMING_PAYERS);
+        const employer = pick(isUsd ? US_EMPLOYERS : INCOMING_PAYERS);
         rows.push({
           user_id: userId,
           account_type: accountType,
           direction: "credit",
           amount: amt,
-          currency: "EUR",
+          currency,
           rail: "salary",
           category: "Salary",
           counterparty_name: employer,
@@ -490,14 +511,14 @@ export function generateTransactions(userId: string, opts: SeedOptions = {}): Tx
           status: "posted",
         });
       } else {
-        const person = randomPersonName();
+        const person = isUsd ? `${pick(US_FIRST_NAMES)} ${pick(US_LAST_NAMES)}` : randomPersonName();
         rows.push({
           user_id: userId,
           account_type: accountType,
           direction: "credit",
           amount: amt,
-          currency: "EUR",
-          rail: "sepa_instant",
+          currency,
+          rail: isUsd ? "internal" : "sepa_instant",
           category: "Transfer",
           counterparty_name: person,
           merchant: person,
@@ -513,8 +534,9 @@ export function generateTransactions(userId: string, opts: SeedOptions = {}): Tx
 }
 
 /** Called once at signup — a sane 30-day "lived-in" starter. */
-export async function seedInitialTransactionsForUser(userId: string) {
-  const rows = generateTransactions(userId, { direction: "both", count: 28, minAmount: 4, maxAmount: 320 });
+export async function seedInitialTransactionsForUser(userId: string, currency: AccountCurrency = "EUR") {
+  const rows = generateTransactions(userId, { currency, direction: "both", count: 28, minAmount: 4, maxAmount: 320 });
+  const employer = currency === "USD" ? pick(US_EMPLOYERS) : "Your Employer GmbH";
   // Add one salary explicitly
   const to = new Date();
   const salaryDate = new Date(to);
@@ -524,11 +546,11 @@ export async function seedInitialTransactionsForUser(userId: string) {
     account_type: "checking",
     direction: "credit",
     amount: 3200,
-    currency: "EUR",
+    currency,
     rail: "salary",
     category: "Salary",
-    counterparty_name: "Your Employer GmbH",
-    merchant: "Your Employer GmbH",
+    counterparty_name: employer,
+    merchant: employer,
     description: "Monthly salary",
     created_at: salaryDate.toISOString(),
     status: "posted",

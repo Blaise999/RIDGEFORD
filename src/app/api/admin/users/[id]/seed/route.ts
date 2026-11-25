@@ -1,3 +1,4 @@
+import { accountCurrency } from "@/lib/account-currency";
 import { canActOn } from "@/lib/desks";
 import { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/auth";
@@ -36,9 +37,9 @@ export async function POST(
       .single();
     if (!user) return fail(404, "User not found");
     if (user.role === "admin") return fail(400, "Refusing to seed into admin account");
-    if (user.currency === "USD") return fail(400, "Automatic fictional transaction seeding is disabled for USD accounts. Import verified bank transactions instead.");
 
     const rows = generateTransactions(id, {
+      currency: accountCurrency(user.currency),
       direction: body?.direction,
       count: body?.count,
       minAmount: body?.minAmount,

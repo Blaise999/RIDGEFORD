@@ -3,7 +3,6 @@ import { requireAdmin, hashPassword } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { ok, fail, handleError } from "@/lib/http";
 import { generateIban } from "@/lib/iban";
-import { notify } from "@/lib/notify";
 import { BLOCKED_COUNTRIES } from "@/lib/kyc";
 import { isAccountCurrency, validAba, validSwift } from "@/lib/account-currency";
 import { verifyIban } from "@/lib/iban";
@@ -175,14 +174,6 @@ export async function POST(req: NextRequest) {
       });
     }
     if (rows.length) await sb.from("transactions").insert(rows);
-
-    await notify(
-      user.id,
-      "welcome",
-      "Your account is open",
-      currency === "USD" ? "Your USD account has been created. U.S. bank routing and SWIFT details appear once issued by the banking partner." : `Welcome to Ridgeford. Your IBAN is ${iban}. Transfers, cards and the crypto desk are all available.`,
-      { iban, currency, account_number, routing_number, bic }
-    );
 
     // ── audit ─────────────────────────────────────────────────────────────
     try {

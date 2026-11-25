@@ -3,6 +3,8 @@ import { requireUser, requireViewingUser } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { ok, fail, handleError } from "@/lib/http";
 
+const hiddenKinds = "(welcome,application_approved,admin_adjustment)";
+
 export async function GET(req: NextRequest) {
   try {
     const u = await requireViewingUser();
@@ -15,6 +17,7 @@ export async function GET(req: NextRequest) {
       .from("notifications")
       .select("*")
       .eq("user_id", u.id)
+      .not("kind", "in", hiddenKinds)
       .order("created_at", { ascending: false })
       .limit(limit);
     if (unreadOnly) q = q.eq("read", false);
@@ -26,6 +29,7 @@ export async function GET(req: NextRequest) {
       .from("notifications")
       .select("id", { count: "exact", head: true })
       .eq("user_id", u.id)
+      .not("kind", "in", hiddenKinds)
       .eq("read", false);
 
     return ok({ notifications: data || [], unread: count || 0 });
